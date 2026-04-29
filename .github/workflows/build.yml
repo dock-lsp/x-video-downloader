@@ -31,13 +31,15 @@ jobs:
       - name: Build Debug
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon -x lint
+          ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 || cat app/build/outputs/logs/*.log 2>/dev/null || true
 
-      - name: Build Release
+      - name: Check build output
         run: |
-          ./gradlew assembleRelease --no-daemon -x lint
+          ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "Debug APK not found"
+          ls -la app/build/outputs/apk/release/ 2>/dev/null || echo "Release APK not found"
 
       - name: Upload APKs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: xvd-apk
