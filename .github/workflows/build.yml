@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     
+    env:
+      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle_home
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,19 +35,26 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: |
+          echo "=== Files in workspace ==="
+          ls -la
+          echo "=== Settings file ==="
+          cat settings.gradle
+          echo "=== Running Gradle ==="
+          ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tail -100
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tail -50
 
       - name: List APK outputs
         run: |
           echo "=== Debug APKs ==="
-          ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "No debug APK"
+          find app/build/outputs/apk -name "*.apk" 2>/dev/null || echo "No APK found"
           echo "=== Release APKs ==="
-          ls -la app/build/outputs/apk/release/ 2>/dev/null || echo "No release APK"
+          find app/build/outputs/apk -name "*.apk" 2>/dev/null || echo "No APK found"
 
       - name: Upload Debug APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: xvd-debug-apk
@@ -52,6 +62,7 @@ jobs:
           retention-days: 7
 
       - name: Upload Release APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: xvd-release-apk
