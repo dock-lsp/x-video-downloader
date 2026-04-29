@@ -28,22 +28,32 @@ jobs:
             -storepass qq900236 -keypass qq900236 \
             -dname "CN=XVideoDownloader, OU=Dev, O=XVD, L=City, ST=State, C=US" 2>/dev/null || true
 
-      - name: Build Debug
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 || cat app/build/outputs/logs/*.log 2>/dev/null || true
+      - name: Make gradlew executable
+        run: chmod +x gradlew
 
-      - name: Check build output
-        run: |
-          ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "Debug APK not found"
-          ls -la app/build/outputs/apk/release/ 2>/dev/null || echo "Release APK not found"
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
-      - name: Upload APKs
-        if: always()
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: List APK outputs
+        run: |
+          echo "=== Debug APKs ==="
+          ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "No debug APK"
+          echo "=== Release APKs ==="
+          ls -la app/build/outputs/apk/release/ 2>/dev/null || echo "No release APK"
+
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: xvd-apk
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/release/*.apk
-          retention-days: 5
+          name: xvd-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 7
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: xvd-release-apk
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 7

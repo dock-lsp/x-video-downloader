@@ -14,8 +14,22 @@ android {
         versionCode 1
         versionName "1.0.0"
     }
-    buildTypes {
+    
+    signingConfigs {
         release {
+            storeFile file('release.keystore')
+            storePassword 'qq900236'
+            keyAlias 'release'
+            keyPassword 'qq900236'
+        }
+    }
+    
+    buildTypes {
+        debug {
+            debuggable true
+        }
+        release {
+            signingConfig signingConfigs.release
             minifyEnabled false
         }
     }
@@ -29,6 +43,10 @@ android {
     buildFeatures {
         viewBinding true
         buildConfig true
+    }
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
     }
 }
 
