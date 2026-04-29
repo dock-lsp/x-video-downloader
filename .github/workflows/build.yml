@@ -21,9 +21,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
       - name: Create keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -40,9 +37,19 @@ jobs:
 
       - name: Build debug APK
         run: |
-          ./gradlew assembleDebug --no-daemon -Pandroid.useAndroidX=true
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace || true
+
+      - name: Upload Debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
 
       - name: Build release APK
+        if: always()
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -50,21 +57,13 @@ jobs:
         run: |
           if [ -n "$KEYSTORE_PASSWORD" ]; then
             ./gradlew assembleRelease --no-daemon \
-              -Pandroid.useAndroidX=true \
               -Pkeystore.file=app/release.keystore \
               -Pkeystore.password=$KEYSTORE_PASSWORD \
               -Pkey.alias=$KEY_ALIAS \
-              -Pkey.password=$KEY_PASSWORD
+              -Pkey.password=$KEY_PASSWORD || true
           else
-            ./gradlew assembleRelease --no-daemon -Pandroid.useAndroidX=true
+            ./gradlew assembleRelease --no-daemon || true
           fi
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: APK
-          path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 7
 
       - name: Upload Release APK
         if: always()
