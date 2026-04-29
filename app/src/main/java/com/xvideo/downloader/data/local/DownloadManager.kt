@@ -21,6 +21,7 @@ import com.xvideo.downloader.data.local.database.entity.DownloadHistoryEntity
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import java.util.UUID
 
 class DownloadManager(private val context: Context) {
@@ -89,6 +90,7 @@ class DownloadManager(private val context: Context) {
             videoUrl = variant.url,
             quality = variant.getQualityLabel(),
             bitrate = variant.bitrate,
+            filePath = outputFile.absolutePath,
             state = 1 // downloading
         )
         downloadDao.insert(entity)

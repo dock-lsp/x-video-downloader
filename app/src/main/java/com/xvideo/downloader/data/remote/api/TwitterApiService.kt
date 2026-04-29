@@ -169,7 +169,7 @@ class TwitterApiService {
 
             // Fallback: try to find video URLs directly in HTML
             val videoVariants = mutableListOf<VideoVariant>()
-            val videoPattern = Pattern.compile("https://video\\.twimg\\.com/[^\\s\"']+\\.mp4[^\s\"']*")
+            val videoPattern = Pattern.compile("https://video\\.twimg\\.com/[^\\s]+.mp4[^\\s]*")
             val videoMatcher = videoPattern.matcher(html)
 
             while (videoMatcher.find()) {

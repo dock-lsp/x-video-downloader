@@ -50,10 +50,6 @@ class HomeFragment : Fragment() {
         handleIntent(requireActivity().intent)
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        handleIntent(intent)
-    }
 
     private fun handleIntent(intent: Intent?) {
         intent?.getStringExtra(Intent.EXTRA_TEXT)?.let { sharedText ->
