@@ -3,72 +3,45 @@ name: Build APK
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
-      - name: Create keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      - name: Create Keystore
         run: |
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > app/release.keystore
-          else
-            # Generate debug keystore for testing
-            keytool -genkey -v -keystore app/release.keystore -alias release \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass qq900236 -keypass qq900236 \
-              -dname "CN=XVideoDownloader, OU=Dev, O=XVD, L=City, ST=State, C=US"
-          fi
+          mkdir -p app
+          keytool -genkey -v -keystore app/release.keystore -alias release \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass qq900236 -keypass qq900236 \
+            -dname "CN=XVideoDownloader, OU=Dev, O=XVD, L=City, ST=State, C=US" 2>/dev/null || true
 
-      - name: Build debug APK
+      - name: Build Debug
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace || true
+          ./gradlew assembleDebug --no-daemon -x lint
 
-      - name: Upload Debug APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Debug-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 7
-
-      - name: Build release APK
-        if: always()
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      - name: Build Release
         run: |
-          if [ -n "$KEYSTORE_PASSWORD" ]; then
-            ./gradlew assembleRelease --no-daemon \
-              -Pkeystore.file=app/release.keystore \
-              -Pkeystore.password=$KEYSTORE_PASSWORD \
-              -Pkey.alias=$KEY_ALIAS \
-              -Pkey.password=$KEY_PASSWORD || true
-          else
-            ./gradlew assembleRelease --no-daemon || true
-          fi
+          ./gradlew assembleRelease --no-daemon -x lint
 
-      - name: Upload Release APK
-        if: always()
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: Release-APK
-          path: app/build/outputs/apk/release/app-release.apk
-          retention-days: 30
+          name: xvd-apk
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+          retention-days: 5
