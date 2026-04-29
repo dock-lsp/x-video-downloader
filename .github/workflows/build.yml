@@ -10,9 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     
-    env:
-      GRADLE_USER_HOME: ${{ github.workspace }}/.gradle_home
-    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,6 +19,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          server-id: ''
+          overwrite-settings: false
 
       - name: Create Keystore
         run: |
@@ -31,30 +30,20 @@ jobs:
             -storepass qq900236 -keypass qq900236 \
             -dname "CN=XVideoDownloader, OU=Dev, O=XVD, L=City, ST=State, C=US" 2>/dev/null || true
 
-      - name: Make gradlew executable
-        run: chmod +x gradlew
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Build Debug APK
-        run: |
-          echo "=== Files in workspace ==="
-          ls -la
-          echo "=== Settings file ==="
-          cat settings.gradle
-          echo "=== Running Gradle ==="
-          ./gradlew assembleDebug --no-daemon --stacktrace --info 2>&1 | tail -100
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tail -50
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: List APK outputs
-        run: |
-          echo "=== Debug APKs ==="
-          find app/build/outputs/apk -name "*.apk" 2>/dev/null || echo "No APK found"
-          echo "=== Release APKs ==="
-          find app/build/outputs/apk -name "*.apk" 2>/dev/null || echo "No APK found"
+        if: always()
+        run: find app/build/outputs/apk -name "*.apk" 2>/dev/null || echo "No APK found"
 
       - name: Upload Debug APK
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: xvd-debug-apk
@@ -62,7 +51,6 @@ jobs:
           retention-days: 7
 
       - name: Upload Release APK
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: xvd-release-apk
