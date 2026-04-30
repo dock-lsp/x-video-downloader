@@ -145,4 +145,16 @@
 
     <!-- Error prefix -->
     <string name="error">오류</string>
+
+    <!-- Online Player -->
+    <string name="online_player">온라인 플레이어</string>
+    <string name="nav_online">온라인</string>
+    <string name="hint_enter_video_url">동영상 URL 입력</string>
+    <string name="btn_play_online">온라인 재생</string>
+    <string name="supported_formats_hint">MP4, M3U8, DASH, WebM 등 직접 링크 지원</string>
+    <string name="recent_play_history">최근 재생 기록</string>
+    <string name="empty_online_hint">위에 동영상 URL을 붙여넣기 하세요</string>
+    <string name="error_invalid_url_general">올바른 동영상 URL을 입력하세요</string>
+    <string name="clear_history_title">기록 삭제</string>
+    <string name="clear_history_message">모든 재생 기록을 삭제하시겠습니까?</string>
 </resources>

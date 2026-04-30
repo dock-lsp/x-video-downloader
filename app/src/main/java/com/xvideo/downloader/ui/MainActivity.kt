@@ -17,6 +17,7 @@ import com.xvideo.downloader.databinding.ActivityMainBinding
 import com.xvideo.downloader.ui.downloads.DownloadsFragment
 import com.xvideo.downloader.ui.home.HomeFragment
 import com.xvideo.downloader.ui.local.LocalVideosFragment
+import com.xvideo.downloader.ui.online.OnlinePlayerFragment
 import com.xvideo.downloader.ui.settings.SettingsFragment
 import com.xvideo.downloader.util.PermissionUtils
 import kotlinx.coroutines.launch
@@ -74,6 +75,7 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             val fragment = when (item.itemId) {
                 R.id.nav_home -> HomeFragment()
+                R.id.nav_online -> OnlinePlayerFragment()
                 R.id.nav_downloads -> DownloadsFragment()
                 R.id.nav_local -> LocalVideosFragment()
                 R.id.nav_settings -> SettingsFragment()

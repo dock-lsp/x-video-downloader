@@ -145,4 +145,16 @@
 
     <!-- Error prefix -->
     <string name="error">错误</string>
+
+    <!-- Online Player -->
+    <string name="online_player">在线播放</string>
+    <string name="nav_online">在线</string>
+    <string name="hint_enter_video_url">输入视频链接</string>
+    <string name="btn_play_online">在线播放</string>
+    <string name="supported_formats_hint">支持 MP4、M3U8、DASH、WebM 等直链视频地址</string>
+    <string name="recent_play_history">播放历史</string>
+    <string name="empty_online_hint">在上方粘贴视频链接即可开始播放</string>
+    <string name="error_invalid_url_general">请输入有效的视频链接</string>
+    <string name="clear_history_title">清除历史</string>
+    <string name="clear_history_message">确定要清除所有播放历史吗？</string>
 </resources>

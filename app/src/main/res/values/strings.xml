@@ -126,6 +126,18 @@
     <string name="quality_hd">HD</string>
     <string name="quality_sd">SD</string>
 
+    <!-- Online Player -->
+    <string name="online_player">Online Player</string>
+    <string name="nav_online">Online</string>
+    <string name="hint_enter_video_url">Enter video URL</string>
+    <string name="btn_play_online">Play Online</string>
+    <string name="supported_formats_hint">Supports MP4, M3U8, DASH, WebM and other direct video links</string>
+    <string name="recent_play_history">Recent History</string>
+    <string name="empty_online_hint">Paste a video URL above to start playing</string>
+    <string name="error_invalid_url_general">Please enter a valid video URL</string>
+    <string name="clear_history_title">Clear History</string>
+    <string name="clear_history_message">Are you sure you want to clear all playback history?</string>
+
     <!-- Messages -->
     <string name="please_enter_url">Please enter a URL</string>
     <string name="download_completed">Download completed!</string>
