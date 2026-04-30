@@ -24,6 +24,7 @@ import com.xvideo.downloader.R
 import com.xvideo.downloader.data.model.VideoInfo
 import com.xvideo.downloader.databinding.ActivityPlayerBinding
 import com.xvideo.downloader.util.FileUtils
+import com.xvideo.downloader.util.PlaybackHistoryManager
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -32,6 +33,7 @@ class PlayerActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPlayerBinding
     private val viewModel: PlayerViewModel by viewModels()
+    private val historyManager by lazy { PlaybackHistoryManager.getInstance(this) }
 
     private var player: ExoPlayer? = null
     private var playWhenReady = true
@@ -348,6 +350,12 @@ class PlayerActivity : AppCompatActivity() {
                             binding.seekBar.max = exoPlayer.duration.toInt()
                             binding.tvDuration.text = FileUtils.formatDuration(exoPlayer.duration)
                             viewModel.updateDuration(exoPlayer.duration)
+
+                            // Save playback history
+                            val title = videoInfo?.authorName ?: videoUrl?.substringAfterLast("/")?.substringBefore("?") ?: "Unknown Video"
+                            videoUrl?.let { url ->
+                                historyManager.addHistory(title, url, exoPlayer.duration)
+                            }
                         }
                         Player.STATE_BUFFERING -> {
                             binding.progressBar.visibility = View.VISIBLE

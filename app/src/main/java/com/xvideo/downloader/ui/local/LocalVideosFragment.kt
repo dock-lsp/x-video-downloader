@@ -13,15 +13,20 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.decode.VideoFrameDecoder
 import com.google.android.material.snackbar.Snackbar
 import com.xvideo.downloader.R
+import com.xvideo.downloader.data.model.PlaybackHistory
 import com.xvideo.downloader.databinding.FragmentLocalVideosBinding
+import com.xvideo.downloader.databinding.ItemPlaybackHistoryBinding
 import com.xvideo.downloader.ui.player.PlayerActivity
 import com.xvideo.downloader.util.FileUtils
+import com.xvideo.downloader.util.PlaybackHistoryManager
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 class LocalVideosFragment : Fragment() {
 
@@ -30,6 +35,8 @@ class LocalVideosFragment : Fragment() {
 
     private val viewModel: LocalVideosViewModel by viewModels()
     private lateinit var adapter: LocalVideosAdapter
+    private lateinit var historyAdapter: PlaybackHistoryAdapter
+    private lateinit var historyManager: PlaybackHistoryManager
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,14 +49,18 @@ class LocalVideosFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        historyManager = PlaybackHistoryManager.getInstance(requireContext())
         setupRecyclerView()
+        setupHistoryRecyclerView()
         setupUI()
         observeState()
+        loadHistory()
     }
 
     override fun onResume() {
         super.onResume()
         viewModel.loadVideos()
+        loadHistory()
     }
 
     private fun setupRecyclerView() {
@@ -68,10 +79,34 @@ class LocalVideosFragment : Fragment() {
         }
     }
 
+    private fun setupHistoryRecyclerView() {
+        historyAdapter = PlaybackHistoryAdapter { history ->
+            openHistoryVideo(history)
+        }
+
+        binding.rvHistory.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = historyAdapter
+        }
+
+        binding.btnClearHistory.setOnClickListener {
+            historyManager.clearHistory()
+            loadHistory()
+            Snackbar.make(binding.root, "播放记录已清空", Snackbar.LENGTH_SHORT).show()
+        }
+    }
+
     private fun setupUI() {
         binding.btnSort.setOnClickListener { view ->
             showSortMenu(view)
         }
+    }
+
+    private fun loadHistory() {
+        val historyList = historyManager.getHistory()
+        historyAdapter.submitList(historyList)
+        binding.tvHistoryEmpty.isVisible = historyList.isEmpty()
+        binding.rvHistory.isVisible = historyList.isNotEmpty()
     }
 
     private fun showSortMenu(anchor: View) {
@@ -154,6 +189,14 @@ class LocalVideosFragment : Fragment() {
         startActivity(intent)
     }
 
+    private fun openHistoryVideo(history: PlaybackHistory) {
+        val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
+            putExtra(PlayerActivity.EXTRA_VIDEO_URL, history.uri)
+            putExtra(PlayerActivity.EXTRA_IS_STREAMING, true)
+        }
+        startActivity(intent)
+    }
+
     private fun shareVideo(video: LocalVideo) {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "video/mp4"
@@ -181,6 +224,68 @@ class LocalVideosFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+}
+
+class PlaybackHistoryAdapter(
+    private val onPlay: (PlaybackHistory) -> Unit
+) : RecyclerView.Adapter<PlaybackHistoryAdapter.ViewHolder>() {
+
+    private var items: List<PlaybackHistory> = emptyList()
+
+    fun submitList(list: List<PlaybackHistory>) {
+        items = list
+        notifyDataSetChanged()
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val binding = ItemPlaybackHistoryBinding.inflate(
+            LayoutInflater.from(parent.context), parent, false
+        )
+        return ViewHolder(binding)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(items[position])
+    }
+
+    override fun getItemCount(): Int = items.size
+
+    inner class ViewHolder(private val binding: ItemPlaybackHistoryBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(history: PlaybackHistory) {
+            binding.apply {
+                tvHistoryTitle.text = history.title
+                tvHistoryTime.text = getRelativeTime(history.timestamp)
+
+                // Try to load thumbnail from video
+                ivHistoryIcon.load(history.uri) {
+                    crossfade(true)
+                    decoderFactory { result, options, _ ->
+                        VideoFrameDecoder(result.source, options)
+                    }
+                    placeholder(R.drawable.ic_play)
+                    error(R.drawable.ic_play)
+                }
+
+                root.setOnClickListener { onPlay(history) }
+            }
+        }
+
+        private fun getRelativeTime(timestamp: Long): String {
+            val now = System.currentTimeMillis()
+            val diff = now - timestamp
+
+            return when {
+                diff < TimeUnit.MINUTES.toMillis(1) -> "刚刚"
+                diff < TimeUnit.HOURS.toMillis(1) -> "${TimeUnit.MILLISECONDS.toMinutes(diff)}分钟前"
+                diff < TimeUnit.DAYS.toMillis(1) -> "${TimeUnit.MILLISECONDS.toHours(diff)}小时前"
+                diff < TimeUnit.DAYS.toMillis(2) -> "昨天"
+                diff < TimeUnit.DAYS.toMillis(7) -> "${TimeUnit.MILLISECONDS.toDays(diff)}天前"
+                else -> "${timestamp / 1000 / 60 / 60 / 24}天前"
+            }
+        }
     }
 }
 
