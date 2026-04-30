@@ -318,7 +318,7 @@ class LocalVideosAdapter(
                 tvName.text = video.name
                 tvSize.text = FileUtils.formatFileSize(video.size)
                 tvDuration.text = FileUtils.formatDuration(video.duration)
-                tvResolution.text = if (video.width > 0) "${video.width}x${video.height}" else parent.context.getString(R.string.unknown)
+                tvResolution.text = if (video.width > 0) "${video.width}x${video.height}" else root.context.getString(R.string.unknown)
 
                 // Load video thumbnail
                 ivThumbnail.load(video.uri) {
