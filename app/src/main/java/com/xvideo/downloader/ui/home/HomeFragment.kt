@@ -69,7 +69,7 @@ class HomeFragment : Fragment() {
                 if (!text.isNullOrEmpty()) {
                     etUrl.setText(text)
                 } else {
-                    showSnackbar("Clipboard is empty")
+                    showSnackbar(getString(R.string.clipboard_empty))
                 }
             }
 
@@ -79,7 +79,7 @@ class HomeFragment : Fragment() {
                 if (url.isNotEmpty()) {
                     viewModel.parseUrl(url)
                 } else {
-                    showSnackbar("Please enter a URL")
+                    showSnackbar(getString(R.string.please_enter_url))
                 }
             }
 
@@ -196,7 +196,7 @@ class HomeFragment : Fragment() {
             binding.btnDownloadGif.visibility = View.VISIBLE
             binding.btnDownloadGif.setOnClickListener {
                 videoInfo.gifVariants.firstOrNull()?.let { gif ->
-                    showSnackbar("GIF download not yet implemented")
+                    showSnackbar(getString(R.string.opening_player))
                 }
             }
         } else {
@@ -214,11 +214,11 @@ class HomeFragment : Fragment() {
                 }
                 is DownloadState.Completed -> {
                     downloadProgressLayout.isVisible = false
-                    showSnackbar("Download completed!")
+                    showSnackbar(getString(R.string.download_completed))
                 }
                 is DownloadState.Error -> {
                     downloadProgressLayout.isVisible = false
-                    showSnackbar("Error: ${state.message}")
+                    showSnackbar(getString(R.string.error_format, state.message))
                 }
                 else -> {
                     downloadProgressLayout.isVisible = false

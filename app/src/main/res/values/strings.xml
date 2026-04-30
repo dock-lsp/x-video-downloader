@@ -37,6 +37,7 @@
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
+    <string name="language">Language</string>
     <string name="downloads_section">Downloads</string>
     <string name="default_quality">Default Quality</string>
     <string name="auto_play">Auto-play videos</string>
@@ -56,4 +57,89 @@
     <string name="error_parse_failed">Failed to parse video</string>
     <string name="error_download_failed">Download failed</string>
     <string name="error_no_video">No video found in this tweet</string>
+
+    <!-- Dialogs -->
+    <string name="clear_cache_title">Clear Cache</string>
+    <string name="clear_cache_message">This will delete all cached data. Continue?</string>
+    <string name="clear">Clear</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="confirm">Confirm</string>
+
+    <!-- Sort options -->
+    <string name="sort_date_newest">Date (Newest)</string>
+    <string name="sort_date_oldest">Date (Oldest)</string>
+    <string name="sort_size_largest">Size (Largest)</string>
+    <string name="sort_size_smallest">Size (Smallest)</string>
+    <string name="sort_name_az">Name (A-Z)</string>
+    <string name="sort_name_za">Name (Z-A)</string>
+
+    <!-- Video details -->
+    <string name="video_name">Name</string>
+    <string name="video_path">Path</string>
+    <string name="video_size">Size</string>
+    <string name="video_duration">Duration</string>
+    <string name="video_resolution">Resolution</string>
+    <string name="unknown">Unknown</string>
+
+    <!-- Download states -->
+    <string name="downloading">Downloading</string>
+    <string name="paused">Paused</string>
+    <string name="completed">Completed</string>
+    <string name="failed">Failed</string>
+
+    <!-- Share -->
+    <string name="share_video">Share Video</string>
+
+    <!-- Permissions -->
+    <string name="permission_denied">Some permissions were denied. Some features may not work properly.</string>
+
+    <!-- Player controls -->
+    <string name="rewind">Rewind</string>
+    <string name="forward">Forward</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <!-- Clipboard -->
+    <string name="clipboard_empty">Clipboard is empty</string>
+
+    <!-- About dialog -->
+    <string name="about_description">A powerful Twitter/X video downloader for Android.</string>
+    <string name="about_features">Features:</string>
+    <string name="about_feature_download">Download videos from Twitter/X</string>
+    <string name="about_feature_quality">Multiple quality options (SD/HD/2K/4K)</string>
+    <string name="about_feature_gif">Download GIFs</string>
+    <string name="about_feature_player">Built-in video player</string>
+    <string name="about_feature_local">Local video management</string>
+
+    <!-- Language options -->
+    <string name="lang_english">English</string>
+    <string name="lang_chinese">中文（简体）</string>
+    <string name="lang_korean">한국어</string>
+    <string name="select_language">Select Language</string>
+
+    <!-- Quality options -->
+    <string name="quality_best">Best</string>
+    <string name="quality_4k">4K</string>
+    <string name="quality_2k">2K</string>
+    <string name="quality_hd">HD</string>
+    <string name="quality_sd">SD</string>
+
+    <!-- Messages -->
+    <string name="please_enter_url">Please enter a URL</string>
+    <string name="download_completed">Download completed!</string>
+    <string name="cache_cleared">Cache cleared</string>
+    <string name="cache_clear_failed">Failed to clear cache</string>
+    <string name="opening_player">Opening video player…</string>
+    <string name="file_not_found">File not found</string>
+
+
+    <!-- Format strings -->
+    <string name="version_format">Version %1$s</string>
+    <string name="version_default">Version 1.0.0</string>
+    <string name="about_content">A powerful Twitter/X video downloader for Android.\n\nFeatures:\n• Download videos from Twitter/X\n• Multiple quality options (SD/HD/2K/4K)\n• Download GIFs\n• Built-in video player\n• Local video management\n\nVersion: %1$s</string>
+
+    <!-- Additional strings -->
+    <string name="video_details">Details</string>
+    <string name="error_format">Error: %1$s</string>
 </resources>

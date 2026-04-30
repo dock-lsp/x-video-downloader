@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -31,7 +32,7 @@ class MainActivity : AppCompatActivity() {
         if (!allGranted) {
             Snackbar.make(
                 binding.root,
-                "Some permissions were denied. Some features may not work properly.",
+                R.string.permission_denied,
                 Snackbar.LENGTH_LONG
             ).show()
         }

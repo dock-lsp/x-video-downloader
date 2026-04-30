@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">X 视频下载器</string>
+    <string name="app_description">下载 Twitter/X 视频</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">首页</string>
+    <string name="nav_downloads">下载</string>
+    <string name="nav_local">本地</string>
+    <string name="nav_settings">设置</string>
+
+    <!-- Home -->
+    <string name="hint_paste_url">粘贴 Twitter/X 链接</string>
+    <string name="btn_paste">粘贴</string>
+    <string name="btn_parse">解析</string>
+    <string name="btn_download">下载</string>
+    <string name="btn_play">播放</string>
+    <string name="btn_download_gif">下载 GIF</string>
+    <string name="select_quality">选择画质</string>
+    <string name="parsing">正在解析视频…</string>
+
+    <!-- Downloads -->
+    <string name="active_downloads">正在下载</string>
+    <string name="history">历史记录</string>
+    <string name="no_active_downloads">暂无下载任务</string>
+    <string name="no_download_history">暂无下载记录</string>
+
+    <!-- Local Videos -->
+    <string name="local_videos">本地视频</string>
+    <string name="no_local_videos">未找到本地视频</string>
+    <string name="sort">排序</string>
+
+    <!-- Settings -->
+    <string name="settings">设置</string>
+    <string name="appearance">外观</string>
+    <string name="theme">主题</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="language">语言</string>
+    <string name="downloads_section">下载</string>
+    <string name="default_quality">默认画质</string>
+    <string name="auto_play">自动播放视频</string>
+    <string name="storage">存储</string>
+    <string name="clear_cache">清除缓存</string>
+    <string name="about">关于</string>
+    <string name="version">版本</string>
+
+    <!-- Player -->
+    <string name="speed">倍速</string>
+    <string name="fullscreen">全屏</string>
+    <string name="lock">锁定</string>
+    <string name="unlock">解锁</string>
+
+    <!-- Errors -->
+    <string name="error_invalid_url">请输入有效的 Twitter/X 链接</string>
+    <string name="error_parse_failed">解析视频失败</string>
+    <string name="error_download_failed">下载失败</string>
+    <string name="error_no_video">该推文中未找到视频</string>
+
+    <!-- Dialogs -->
+    <string name="clear_cache_title">清除缓存</string>
+    <string name="clear_cache_message">这将删除所有缓存数据，确定继续吗？</string>
+    <string name="clear">清除</string>
+    <string name="cancel">取消</string>
+    <string name="ok">确定</string>
+    <string name="confirm">确认</string>
+
+    <!-- Sort options -->
+    <string name="sort_date_newest">日期（最新）</string>
+    <string name="sort_date_oldest">日期（最早）</string>
+    <string name="sort_size_largest">大小（最大）</string>
+    <string name="sort_size_smallest">大小（最小）</string>
+    <string name="sort_name_az">名称（A-Z）</string>
+    <string name="sort_name_za">名称（Z-A）</string>
+
+    <!-- Video details -->
+    <string name="video_name">名称</string>
+    <string name="video_path">路径</string>
+    <string name="video_size">大小</string>
+    <string name="video_duration">时长</string>
+    <string name="video_resolution">分辨率</string>
+    <string name="unknown">未知</string>
+
+    <!-- Download states -->
+    <string name="downloading">下载中</string>
+    <string name="paused">已暂停</string>
+    <string name="completed">已完成</string>
+    <string name="failed">失败</string>
+
+    <!-- Share -->
+    <string name="share_video">分享视频</string>
+
+    <!-- Permissions -->
+    <string name="permission_denied">部分权限被拒绝，部分功能可能无法正常使用</string>
+
+    <!-- Player controls -->
+    <string name="rewind">快退</string>
+    <string name="forward">快进</string>
+    <string name="next">下一个</string>
+    <string name="previous">上一个</string>
+
+    <!-- Clipboard -->
+    <string name="clipboard_empty">剪贴板为空</string>
+
+    <!-- About dialog -->
+    <string name="about_description">强大的 Twitter/X 视频下载器</string>
+    <string name="about_features">功能：</string>
+    <string name="about_feature_download">下载 Twitter/X 视频</string>
+    <string name="about_feature_quality">多种画质可选（标清/高清/2K/4K）</string>
+    <string name="about_feature_gif">支持下载 GIF</string>
+    <string name="about_feature_player">内置视频播放器</string>
+    <string name="about_feature_local">本地视频管理</string>
+
+    <!-- Language options -->
+    <string name="lang_english">English</string>
+    <string name="lang_chinese">中文（简体）</string>
+    <string name="lang_korean">한국어</string>
+    <string name="select_language">选择语言</string>
+
+    <!-- Quality options -->
+    <string name="quality_best">最佳</string>
+    <string name="quality_4k">4K</string>
+    <string name="quality_2k">2K</string>
+    <string name="quality_hd">高清</string>
+    <string name="quality_sd">标清</string>
+
+    <!-- Messages -->
+    <string name="please_enter_url">请输入链接</string>
+    <string name="download_completed">下载完成！</string>
+    <string name="cache_cleared">缓存已清除</string>
+    <string name="cache_clear_failed">清除缓存失败</string>
+    <string name="opening_player">正在打开播放器…</string>
+    <string name="file_not_found">文件未找到</string>
+
+
+    <!-- Format strings -->
+    <string name="version_format">版本 %1$s</string>
+    <string name="version_default">版本 1.0.0</string>
+    <string name="about_content">强大的 Twitter/X 视频下载器。\n\n功能：\n• 下载 Twitter/X 视频\n• 多种画质选项（标清/高清/2K/4K）\n• 下载 GIF\n• 内置视频播放器\n• 本地视频管理\n\n版本：%1$s</string>
+
+    <!-- Additional strings -->
+    <string name="video_details">详情</string>
+    <string name="error_format">错误：%1$s</string>
+</resources>

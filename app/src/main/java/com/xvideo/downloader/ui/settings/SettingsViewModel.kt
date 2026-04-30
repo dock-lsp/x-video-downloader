@@ -3,6 +3,7 @@ package com.xvideo.downloader.ui.settings
 import android.app.Application
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.xvideo.downloader.util.FileUtils
@@ -31,6 +32,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _autoPlay = MutableStateFlow(getAutoPlay())
     val autoPlay: StateFlow<Boolean> = _autoPlay.asStateFlow()
 
+    private val _appLanguage = MutableStateFlow(getAppLanguage())
+    val appLanguage: StateFlow<String> = _appLanguage.asStateFlow()
+
     private val _toastMessage = MutableSharedFlow<String>()
     val toastMessage: SharedFlow<String> = _toastMessage.asSharedFlow()
 
@@ -48,6 +52,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private fun getAutoPlay(): Boolean {
         return prefs.getBoolean("auto_play", true)
+    }
+
+    private fun getAppLanguage(): String {
+        return prefs.getString("app_language", LANG_SYSTEM) ?: LANG_SYSTEM
     }
 
     fun setThemeMode(mode: Int) {
@@ -69,6 +77,20 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setAutoPlay(enabled: Boolean) {
         prefs.edit().putBoolean("auto_play", enabled).apply()
         _autoPlay.value = enabled
+    }
+
+    fun setAppLanguage(language: String) {
+        prefs.edit().putString("app_language", language).apply()
+        _appLanguage.value = language
+        
+        // Set the app locale
+        val localeList = when (language) {
+            LANG_ENGLISH -> LocaleListCompat.forLanguageTags("en")
+            LANG_CHINESE -> LocaleListCompat.forLanguageTags("zh")
+            LANG_KOREAN -> LocaleListCompat.forLanguageTags("ko")
+            else -> LocaleListCompat.getEmptyLocaleList()
+        }
+        AppCompatDelegate.setApplicationLocales(localeList)
     }
 
     fun clearCache() {
@@ -100,5 +122,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
         val THEME_OPTIONS = listOf("System Default", "Light", "Dark")
         val QUALITY_OPTIONS = listOf("Best", "4K", "2K", "HD", "SD")
+        
+        const val LANG_SYSTEM = "system"
+        const val LANG_ENGLISH = "en"
+        const val LANG_CHINESE = "zh"
+        const val LANG_KOREAN = "ko"
+        
+        val LANGUAGE_OPTIONS = listOf("System Default", "English", "中文（简体）", "한국어")
+        val LANGUAGE_VALUES = listOf(LANG_SYSTEM, LANG_ENGLISH, LANG_CHINESE, LANG_KOREAN)
     }
 }

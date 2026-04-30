@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
+import com.xvideo.downloader.R
 import com.xvideo.downloader.data.local.database.entity.DownloadHistoryEntity
 import com.xvideo.downloader.data.model.DownloadTask
 import com.xvideo.downloader.data.model.DownloadTaskState
@@ -62,7 +63,7 @@ class DownloadsFragment : Fragment() {
                     if (FileUtils.fileExists(path)) {
                         openLocalFile(path)
                     } else {
-                        showSnackbar("File not found")
+                        showSnackbar(getString(R.string.file_not_found))
                     }
                 }
             },
@@ -136,7 +137,7 @@ class DownloadsFragment : Fragment() {
                 putExtra(Intent.EXTRA_STREAM, android.net.Uri.parse(path))
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            startActivity(Intent.createChooser(intent, "Share Video"))
+            startActivity(Intent.createChooser(intent, getString(R.string.share_video)))
         }
     }
 

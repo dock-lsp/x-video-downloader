@@ -112,12 +112,12 @@ class LocalVideosFragment : Fragment() {
     private fun showSortMenu(anchor: View) {
         val popup = PopupMenu(requireContext(), anchor)
         popup.menu.apply {
-            add(0, 1, 0, "Date (Newest)")
-            add(0, 2, 0, "Date (Oldest)")
-            add(0, 3, 0, "Size (Largest)")
-            add(0, 4, 0, "Size (Smallest)")
-            add(0, 5, 0, "Name (A-Z)")
-            add(0, 6, 0, "Name (Z-A)")
+            add(0, 1, 0, getString(R.string.sort_date_newest))
+            add(0, 2, 0, getString(R.string.sort_date_oldest))
+            add(0, 3, 0, getString(R.string.sort_size_largest))
+            add(0, 4, 0, getString(R.string.sort_size_smallest))
+            add(0, 5, 0, getString(R.string.sort_name_az))
+            add(0, 6, 0, getString(R.string.sort_name_za))
         }
         popup.setOnMenuItemClickListener { item ->
             val sortOrder = when (item.itemId) {
@@ -138,10 +138,10 @@ class LocalVideosFragment : Fragment() {
     private fun showPopupMenu(video: LocalVideo, anchor: View) {
         val popup = PopupMenu(requireContext(), anchor)
         popup.menu.apply {
-            add(0, 1, 0, "Play")
-            add(0, 2, 0, "Share")
-            add(0, 3, 0, "Delete")
-            add(0, 4, 0, "Details")
+            add(0, 1, 0, getString(R.string.btn_play))
+            add(0, 2, 0, getString(R.string.share_video))
+            add(0, 3, 0, getString(R.string.clear))
+            add(0, 4, 0, getString(R.string.video_details))
         }
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
@@ -203,16 +203,16 @@ class LocalVideosFragment : Fragment() {
             putExtra(Intent.EXTRA_STREAM, video.uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        startActivity(Intent.createChooser(intent, "Share Video"))
+        startActivity(Intent.createChooser(intent, getString(R.string.share_video)))
     }
 
     private fun showVideoDetails(video: LocalVideo) {
         val details = """
-            Name: ${video.name}
-            Path: ${video.path}
-            Size: ${FileUtils.formatFileSize(video.size)}
-            Duration: ${FileUtils.formatDuration(video.duration)}
-            Resolution: ${video.width}x${video.height}
+            ${getString(R.string.video_name)}: ${video.name}
+            ${getString(R.string.video_path)}: ${video.path}
+            ${getString(R.string.video_size)}: ${FileUtils.formatFileSize(video.size)}
+            ${getString(R.string.video_duration)}: ${FileUtils.formatDuration(video.duration)}
+            ${getString(R.string.video_resolution)}: ${video.width}x${video.height}
         """.trimIndent()
         showSnackbar(details)
     }
@@ -318,7 +318,7 @@ class LocalVideosAdapter(
                 tvName.text = video.name
                 tvSize.text = FileUtils.formatFileSize(video.size)
                 tvDuration.text = FileUtils.formatDuration(video.duration)
-                tvResolution.text = if (video.width > 0) "${video.width}x${video.height}" else "Unknown"
+                tvResolution.text = if (video.width > 0) "${video.width}x${video.height}" else parent.context.getString(R.string.unknown)
 
                 // Load video thumbnail
                 ivThumbnail.load(video.uri) {
