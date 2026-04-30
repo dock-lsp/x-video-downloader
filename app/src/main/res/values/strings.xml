@@ -53,6 +53,7 @@
     <string name="unlock">Unlock</string>
 
     <!-- Errors -->
+    <string name="error">Error</string>
     <string name="error_invalid_url">Please enter a valid Twitter/X URL</string>
     <string name="error_parse_failed">Failed to parse video</string>
     <string name="error_download_failed">Download failed</string>
@@ -132,7 +133,6 @@
     <string name="cache_clear_failed">Failed to clear cache</string>
     <string name="opening_player">Opening video player…</string>
     <string name="file_not_found">File not found</string>
-
 
     <!-- Format strings -->
     <string name="version_format">Version %1$s</string>

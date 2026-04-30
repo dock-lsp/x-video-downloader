@@ -1,9 +1,11 @@
 package com.xvideo.downloader.ui.home
 
 import android.app.Application
+import android.content.res.Resources
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.xvideo.downloader.App
+import com.xvideo.downloader.R
 import com.xvideo.downloader.data.model.DownloadState
 import com.xvideo.downloader.data.model.VideoInfo
 import com.xvideo.downloader.data.model.VideoVariant
@@ -22,6 +24,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = VideoRepository()
     private val downloadManager = App.getInstance().downloadManager
+    private val resources: Resources = application.resources
 
     private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
     val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
@@ -43,7 +46,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         if (!UrlUtils.isValidTwitterUrl(normalizedUrl)) {
             viewModelScope.launch {
-                _toastMessage.emit("Please enter a valid Twitter/X URL")
+                _toastMessage.emit(resources.getString(R.string.error_invalid_url))
             }
             return
         }
@@ -60,9 +63,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     _downloadState.value = DownloadState.Ready(videoInfo)
                 },
                 onFailure = { error ->
-                    _parseState.value = VideoParseState.Error(error.message ?: "Failed to parse video")
-                    _downloadState.value = DownloadState.Error(error.message ?: "Failed to parse video")
-                    _toastMessage.emit("Error: ${error.message}")
+                    val errorMsg = error.message ?: resources.getString(R.string.error_parse_failed)
+                    _parseState.value = VideoParseState.Error(errorMsg)
+                    _downloadState.value = DownloadState.Error(errorMsg)
+                    _toastMessage.emit("${resources.getString(R.string.error)}: $errorMsg")
                 }
             )
         }
@@ -77,8 +81,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 val taskId = downloadManager.startDownload(videoInfo, variant)
                 _currentTaskId.value = taskId
             } catch (e: Exception) {
-                _downloadState.value = DownloadState.Error(e.message ?: "Failed to start download")
-                _toastMessage.emit("Error: ${e.message}")
+                val errorMsg = e.message ?: resources.getString(R.string.error_download_failed)
+                _downloadState.value = DownloadState.Error(errorMsg)
+                _toastMessage.emit("${resources.getString(R.string.error)}: $errorMsg")
             }
         }
     }
@@ -86,7 +91,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun playOnline(variant: VideoVariant) {
         val videoInfo = _currentVideoInfo.value ?: return
         viewModelScope.launch {
-            _toastMessage.emit("Opening video player...")
+            _toastMessage.emit(resources.getString(R.string.opening_player))
         }
     }
 

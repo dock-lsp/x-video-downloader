@@ -142,4 +142,7 @@
     <!-- Additional strings -->
     <string name="video_details">상세 정보</string>
     <string name="error_format">오류: %1$s</string>
+
+    <!-- Error prefix -->
+    <string name="error">오류</string>
 </resources>
