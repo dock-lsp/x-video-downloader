@@ -6,40 +6,59 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.MediaType.Companion.toMediaType
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
 /**
  * Twitter/X Video API Service
  *
- * Flow: Extract ID → Skip auth via Syndication API → Parse JSON →
- *       Get m3u8 playlist → Parse m3u8 → Separate audio/video streams
+ * Core Flow (same as x-twitter-downloader.com):
+ * 1. Extract tweet ID from URL
+ * 2. Get Guest Token (bypass auth)
+ * 3. Call Twitter GraphQL API to get tweet detail JSON
+ * 4. Parse JSON → extract video variants (mp4) and m3u8 URLs
+ * 5. Return direct download URLs
  *
- * The syndication API (syndication.twitter.com) provides public tweet data
- * without requiring authentication tokens.
+ * Uses Twitter's internal GraphQL API with public Bearer token + Guest Token.
+ * This is the same approach used by all major Twitter video download services.
  */
 class TwitterApiService {
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
         .followRedirects(true)
         .followSslRedirects(true)
         .build()
 
     companion object {
-        // Syndication API - public, no auth required
-        private const val SYNDICATION_API = "https://syndication.twitter.com/srv/timeline-profile/screen-name/{username}"
-        private const val SYNDICATION_TWEET = "https://cdn.syndication.twimg.com/tweet-result?id={tweetId}&lang=en"
+        // Twitter's public Bearer token (embedded in their JS, publicly known)
+        private const val BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
 
-        // VxTwitter fallback - public proxy API
-        private const val VXTWITTER_API = "https://api.vxtwitter.com/{tweetId}"
+        // Guest token activation endpoint
+        private const val GUEST_ACTIVATE_URL = "https://api.twitter.com/1.1/guest/activate.json"
 
-        // FxTwitter fallback
-        private const val FXTWITTER_API = "https://api.fxtwitter.com/{tweetId}"
+        // GraphQL endpoint for tweet detail
+        private const val GRAPHQL_URL = "https://twitter.com/i/api/graphql/H8OOoI-5ZE4NxgRr8lfyWg/TweetResultByRestId"
+
+        // GraphQL features (required parameter)
+        private const val GRAPHQL_FEATURES = """{"creator_subscriptions_tweet_preview_api_enabled":true,"tweetypie_unmention_optimization_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"responsive_web_twitter_article_tweet_consumption_enabled":false,"tweet_awards_web_tipping_enabled":false,"creator_subscriptions_quote_tweet_preview_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":true,"rweb_video_timestamps_enabled":true,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true}"""
+
+        // Fallback: VxTwitter API (third-party proxy, no auth needed)
+        private const val VXTWITTER_API = "https://api.vxtwitter.com"
+
+        // Fallback: FxTwitter API
+        private const val FXTWITTER_API = "https://api.fxtwitter.com"
 
         @Volatile
         private var instance: TwitterApiService? = null
+
+        // Cache guest token for reuse
+        @Volatile
+        private var cachedGuestToken: String? = null
+        private var guestTokenExpiry: Long = 0
 
         fun getInstance(): TwitterApiService {
             return instance ?: synchronized(this) {
@@ -53,139 +72,69 @@ class TwitterApiService {
             val tweetId = extractTweetId(url)
                 ?: return@withContext Result.failure(Exception("无效的 Twitter/X 链接格式"))
 
-            // Strategy 1: Try FxTwitter API (most reliable for m3u8)
+            // Strategy 1: Twitter GraphQL API (most reliable, same as website)
+            val gqlResult = tryGraphQLApi(tweetId, url)
+            if (gqlResult != null) return@withContext Result.success(gqlResult)
+
+            // Strategy 2: FxTwitter proxy
             val fxResult = tryFxTwitterApi(tweetId, url)
             if (fxResult != null) return@withContext Result.success(fxResult)
 
-            // Strategy 2: Try VxTwitter API (direct MP4 fallback)
+            // Strategy 3: VxTwitter proxy
             val vxResult = tryVxTwitterApi(tweetId, url)
             if (vxResult != null) return@withContext Result.success(vxResult)
 
-            // Strategy 3: Try Syndication API (no auth needed)
-            val syndResult = trySyndicationApi(tweetId, url)
-            if (syndResult != null) return@withContext Result.success(syndResult)
-
-            // Strategy 4: Try direct webpage scraping
-            val webResult = tryWebpageScraping(tweetId, url)
-            if (webResult != null) return@withContext Result.success(webResult)
-
-            Result.failure(Exception("无法解析该推文的视频，请检查链接是否正确"))
+            Result.failure(Exception("无法解析该推文的视频。请确认链接正确且推文包含视频"))
         } catch (e: Exception) {
             Result.failure(Exception("解析失败: ${e.message}"))
         }
     }
 
-    // ==================== Strategy 1: FxTwitter API ====================
-    private suspend fun tryFxTwitterApi(tweetId: String, url: String): VideoInfo? {
+    // ==================== Strategy 1: Twitter GraphQL API ====================
+
+    private suspend fun tryGraphQLApi(tweetId: String, url: String): VideoInfo? {
         return try {
-            val apiUrl = FXTWITTER_API.replace("{tweetId}", tweetId)
+            val guestToken = getGuestToken() ?: return null
+
+            val variables = """{"tweetId":"$tweetId","withCommunity":false,"includePromutedContent":false,"withVoice":false}"""
+            val encodedVariables = java.net.URLEncoder.encode(variables, "UTF-8")
+            val encodedFeatures = java.net.URLEncoder.encode(GRAPHQL_FEATURES, "UTF-8")
+
+            val apiUrl = "$GRAPHQL_URL?variables=$encodedVariables&features=$encodedFeatures"
+
             val request = Request.Builder()
                 .url(apiUrl)
-                .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                .addHeader("Accept", "application/json")
+                .addHeader("Authorization", "Bearer $BEARER_TOKEN")
+                .addHeader("x-guest-token", guestToken)
+                .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .addHeader("x-twitter-active-user", "yes")
+                .addHeader("x-twitter-client-language", "en")
                 .build()
 
             val response = client.newCall(request).execute()
-            if (!response.isSuccessful) return null
+            if (!response.isSuccessful) {
+                return null
+            }
 
             val body = response.body?.string() ?: return null
-            val json = JsonParser.parseString(body).asJsonObject
-
-            // FxTwitter wraps response in "tweet" key
-            val tweet = json.getAsJsonObject("tweet") ?: json
-
-            parseFxTwitterResponse(tweet, url)
+            parseGraphQLResponse(body, tweetId, url)
         } catch (e: Exception) {
             null
         }
     }
 
-    private fun parseFxTwitterResponse(tweet: com.google.gson.JsonObject, url: String): VideoInfo? {
-        try {
-            val tweetId = tweet.get("id")?.asString ?: tweet.get("tweet_id")?.asString ?: return null
-            val text = tweet.get("text")?.asString ?: ""
-            val author = tweet.getAsJsonObject("author")
-            val authorName = author?.get("name")?.asString ?: "Unknown"
-            val authorUsername = author?.get("screen_name")?.asString
-                ?: author?.get("username")?.asString ?: "unknown"
-
-            val videoVariants = mutableListOf<VideoVariant>()
-            val gifVariants = mutableListOf<GifVariant>()
-            var thumbnailUrl: String? = null
-            var m3u8Url: String? = null
-
-            // Parse media
-            val media = tweet.getAsJsonObject("media")
-            if (media != null) {
-                // Check for m3u8 (HLS) - this is what we want for the new flow
-                val m3u8 = media.get("m3u8")?.asString
-                    ?: media.getAsJsonObject("video")?.get("m3u8_url")?.asString
-                if (m3u8 != null) {
-                    m3u8Url = m3u8
-                }
-
-                // Parse video variants
-                val videos = media.getAsJsonArray("videos")
-                if (videos != null) {
-                    for (video in videos) {
-                        val videoObj = video.asJsonObject
-                        thumbnailUrl = videoObj.get("thumbnail_url")?.asString ?: thumbnailUrl
-
-                        val m3u8Link = videoObj.get("m3u8_url")?.asString
-                            ?: videoObj.get("url")?.asString
-                        if (m3u8Link != null && m3u8Link.contains("m3u8")) {
-                            m3u8Url = m3u8Link
-                        }
-
-                        // Direct MP4 variants
-                        val variants = videoObj.getAsJsonArray("variants")
-                        if (variants != null) {
-                            for (variant in variants) {
-                                val vObj = variant.asJsonObject
-                                val vUrl = vObj.get("url")?.asString ?: continue
-                                val bitrate = vObj.get("bitrate")?.asInt ?: 0
-                                val contentType = vObj.get("content_type")?.asString ?: "video/mp4"
-                                if (contentType == "video/mp4") {
-                                    videoVariants.add(VideoVariant(vUrl, bitrate, contentType))
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Check for photos array (some responses use this)
-                val photos = media.getAsJsonArray("photos")
-                if (photos != null && videoVariants.isEmpty()) {
-                    // Not a video tweet
-                }
-            }
-
-            // If we have m3u8 but no direct variants, that's fine - we'll use m3u8 flow
-            if (videoVariants.isEmpty() && m3u8Url == null) return null
-
-            return VideoInfo(
-                tweetId = tweetId,
-                tweetUrl = url,
-                authorName = authorName,
-                authorUsername = authorUsername,
-                tweetText = text,
-                thumbnailUrl = thumbnailUrl,
-                videoVariants = videoVariants,
-                gifVariants = gifVariants,
-                m3u8Url = m3u8Url,
-                hasM3u8 = m3u8Url != null
-            )
-        } catch (e: Exception) {
-            return null
+    private fun getGuestToken(): String? {
+        // Return cached token if still valid
+        val cached = cachedGuestToken
+        if (cached != null && System.currentTimeMillis() < guestTokenExpiry) {
+            return cached
         }
-    }
 
-    // ==================== Strategy 2: VxTwitter API ====================
-    private suspend fun tryVxTwitterApi(tweetId: String, url: String): VideoInfo? {
         return try {
-            val apiUrl = VXTWITTER_API.replace("{tweetId}", tweetId)
             val request = Request.Builder()
-                .url(apiUrl)
+                .url(GUEST_ACTIVATE_URL)
+                .post("".toRequestBody("application/json".toMediaType()))
+                .addHeader("Authorization", "Bearer $BEARER_TOKEN")
                 .addHeader("User-Agent", "Mozilla/5.0")
                 .build()
 
@@ -193,162 +142,116 @@ class TwitterApiService {
             if (!response.isSuccessful) return null
 
             val body = response.body?.string() ?: return null
-            parseVxTwitterResponse(body, url)
+            val json = JsonParser.parseString(body).asJsonObject
+            val token = json.get("guest_token")?.asString ?: return null
+
+            // Cache for 30 minutes
+            cachedGuestToken = token
+            guestTokenExpiry = System.currentTimeMillis() + 30 * 60 * 1000
+
+            token
         } catch (e: Exception) {
             null
         }
     }
 
-    private fun parseVxTwitterResponse(json: String, url: String): VideoInfo? {
+    private fun parseGraphQLResponse(jsonStr: String, tweetId: String, url: String): VideoInfo? {
         try {
-            val parser = JsonParser.parseString(json).asJsonObject
-            val tweetId = parser.get("tweet_id")?.asString ?: parser.get("id")?.asString ?: return null
-            val text = parser.get("text")?.asString ?: ""
-            val user = parser.getAsJsonObject("user")
-            val authorName = user?.get("name")?.asString ?: "Unknown"
-            val authorUsername = user?.get("screen_name")?.asString ?: "unknown"
+            val root = JsonParser.parseString(jsonStr).asJsonObject
 
+            // Navigate: data -> tweetResult -> result
+            val data = root.getAsJsonObject("data") ?: return null
+            val tweetResult = data.getAsJsonObject("tweetResult") ?: return null
+            val result = tweetResult.getAsJsonObject("result") ?: return null
+
+            // Handle tweet types (Tweet vs TweetWithVisibilityResults)
+            val tweet = if (result.has("tweet")) {
+                result.getAsJsonObject("tweet")
+            } else {
+                result
+            } ?: return null
+
+            val legacy = tweet.getAsJsonObject("legacy") ?: return null
+            val core = tweet.getAsJsonObject("core")
+
+            // Extract author info
+            val userResults = core?.getAsJsonObject("user_results")
+                ?.getAsJsonObject("result")
+                ?.getAsJsonObject("legacy")
+            val authorName = userResults?.get("name")?.asString ?: "Unknown"
+            val authorUsername = userResults?.get("screen_name")?.asString ?: "unknown"
+
+            val text = legacy.get("full_text")?.asString ?: ""
+
+            // Extract video info from extended_entities
             val videoVariants = mutableListOf<VideoVariant>()
-            val gifVariants = mutableListOf<GifVariant>()
             var thumbnailUrl: String? = null
             var m3u8Url: String? = null
 
-            val mediaArray = parser.getAsJsonArray("media")
-            if (mediaArray != null) {
-                for (media in mediaArray) {
-                    val mediaObj = media.asJsonObject
-                    val type = mediaObj.get("type")?.asString
+            val extendedEntities = legacy.getAsJsonObject("extended_entities")
+            if (extendedEntities != null) {
+                val mediaArray = extendedEntities.getAsJsonArray("media")
+                if (mediaArray != null) {
+                    for (media in mediaArray) {
+                        val mediaObj = media.asJsonObject
+                        val type = mediaObj.get("type")?.asString
 
-                    if (type == "video") {
-                        thumbnailUrl = mediaObj.get("media_url_https")?.asString
-                            ?: mediaObj.get("thumbnail_url")?.asString
+                        if (type == "video" || type == "animated_gif") {
+                            // Get thumbnail
+                            thumbnailUrl = mediaObj.get("media_url_https")?.asString
 
-                        // Check for m3u8 URL
-                        val m3u8 = mediaObj.get("m3u8_url")?.asString
-                            ?: mediaObj.get("url")?.asString?.takeIf { it.contains("m3u8") }
-                        if (m3u8 != null) {
-                            m3u8Url = m3u8
-                        }
+                            val videoInfo = mediaObj.getAsJsonObject("video_info")
+                            if (videoInfo != null) {
+                                val variants = videoInfo.getAsJsonArray("variants")
+                                if (variants != null) {
+                                    for (variant in variants) {
+                                        val vObj = variant.asJsonObject
+                                        val vUrl = vObj.get("url")?.asString ?: continue
+                                        val bitrate = vObj.get("bitrate")?.asInt ?: 0
+                                        val contentType = vObj.get("content_type")?.asString ?: ""
 
-                        val videoInfo = mediaObj.getAsJsonObject("video_info")
-                        if (videoInfo != null) {
-                            val variants = videoInfo.getAsJsonArray("variants")
-                            if (variants != null) {
-                                for (variant in variants) {
-                                    val variantObj = variant.asJsonObject
-                                    val vUrl = variantObj.get("url")?.asString ?: continue
-                                    val bitrate = variantObj.get("bitrate")?.asInt ?: 0
-                                    val contentType = variantObj.get("content_type")?.asString ?: "video/mp4"
-
-                                    if (contentType == "video/mp4") {
-                                        videoVariants.add(VideoVariant(vUrl, bitrate, contentType))
-                                    } else if (vUrl.contains("m3u8") && m3u8Url == null) {
-                                        m3u8Url = vUrl
+                                        when {
+                                            contentType == "video/mp4" -> {
+                                                videoVariants.add(VideoVariant(vUrl, bitrate, "video/mp4"))
+                                            }
+                                            contentType == "application/x-mpegURL" || vUrl.contains(".m3u8") -> {
+                                                m3u8Url = vUrl
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
-                    } else if (type == "animated_gif") {
-                        val videoInfo = mediaObj.getAsJsonObject("video_info")
-                        if (videoInfo != null) {
-                            val variants = videoInfo.getAsJsonArray("variants")
-                            if (variants != null) {
-                                for (variant in variants) {
-                                    val variantObj = variant.asJsonObject
-                                    val vUrl = variantObj.get("url")?.asString ?: continue
-                                    val bitrate = variantObj.get("bitrate")?.asInt ?: 0
-                                    gifVariants.add(GifVariant(vUrl, bitrate))
+                    }
+                }
+            }
+
+            // Also check legacy.entities as fallback
+            if (videoVariants.isEmpty() && m3u8Url == null) {
+                val entities = legacy.getAsJsonObject("entities")
+                if (entities != null) {
+                    val mediaArray = entities.getAsJsonArray("media")
+                    if (mediaArray != null) {
+                        for (media in mediaArray) {
+                            val mediaObj = media.asJsonObject
+                            val videoInfo = mediaObj.getAsJsonObject("video_info")
+                            if (videoInfo != null) {
+                                val variants = videoInfo.getAsJsonArray("variants")
+                                if (variants != null) {
+                                    for (variant in variants) {
+                                        val vObj = variant.asJsonObject
+                                        val vUrl = vObj.get("url")?.asString ?: continue
+                                        val bitrate = vObj.get("bitrate")?.asInt ?: 0
+                                        val contentType = vObj.get("content_type")?.asString ?: ""
+                                        if (contentType == "video/mp4") {
+                                            videoVariants.add(VideoVariant(vUrl, bitrate, "video/mp4"))
+                                        } else if (vUrl.contains(".m3u8")) {
+                                            m3u8Url = vUrl
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                }
-            }
-
-            if (videoVariants.isEmpty() && gifVariants.isEmpty() && m3u8Url == null) return null
-
-            return VideoInfo(
-                tweetId = tweetId,
-                tweetUrl = url,
-                authorName = authorName,
-                authorUsername = authorUsername,
-                tweetText = text,
-                thumbnailUrl = thumbnailUrl,
-                videoVariants = videoVariants,
-                gifVariants = gifVariants,
-                m3u8Url = m3u8Url,
-                hasM3u8 = m3u8Url != null
-            )
-        } catch (e: Exception) {
-            return null
-        }
-    }
-
-    // ==================== Strategy 3: Syndication API (No Auth) ====================
-    private suspend fun trySyndicationApi(tweetId: String, url: String): VideoInfo? {
-        return try {
-            val apiUrl = SYNDICATION_TWEET.replace("{tweetId}", tweetId)
-            val request = Request.Builder()
-                .url(apiUrl)
-                .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                .addHeader("Accept", "application/json")
-                .addHeader("Referer", "https://platform.twitter.com/")
-                .build()
-
-            val response = client.newCall(request).execute()
-            if (!response.isSuccessful) return null
-
-            val body = response.body?.string() ?: return null
-            parseSyndicationResponse(body, tweetId, url)
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun parseSyndicationResponse(json: String, tweetId: String, url: String): VideoInfo? {
-        try {
-            val parser = JsonParser.parseString(json).asJsonObject
-            val text = parser.get("text")?.asString ?: ""
-
-            val author = parser.getAsJsonObject("author")
-            val authorName = author?.get("name")?.asString ?: "Unknown"
-            val authorUsername = author?.get("screen_name")?.asString ?: "unknown"
-
-            val videoVariants = mutableListOf<VideoVariant>()
-            var thumbnailUrl: String? = null
-            var m3u8Url: String? = null
-
-            // Syndication API puts video in "video" key
-            val video = parser.getAsJsonObject("video")
-            if (video != null) {
-                thumbnailUrl = video.get("thumbnail_url")?.asString
-                m3u8Url = video.get("m3u8_url")?.asString
-
-                val variants = video.getAsJsonArray("variants")
-                if (variants != null) {
-                    for (variant in variants) {
-                        val vObj = variant.asJsonObject
-                        val vUrl = vObj.get("src")?.asString ?: vObj.get("url")?.asString ?: continue
-                        val bitrate = vObj.get("bitrate")?.asInt ?: 0
-                        val contentType = vObj.get("content_type")?.asString ?: "video/mp4"
-
-                        if (contentType == "video/mp4") {
-                            videoVariants.add(VideoVariant(vUrl, bitrate, contentType))
-                        } else if (vUrl.contains("m3u8") && m3u8Url == null) {
-                            m3u8Url = vUrl
-                        }
-                    }
-                }
-            }
-
-            // Check photos array for video
-            val photos = parser.getAsJsonArray("photos")
-            if (photos != null && video == null) {
-                for (photo in photos) {
-                    val photoObj = photo.asJsonObject
-                    val videoUrl = photoObj.get("video_url")?.asString
-                    if (videoUrl != null) {
-                        videoVariants.add(VideoVariant(videoUrl, 0, "video/mp4"))
                     }
                 }
             }
@@ -362,7 +265,7 @@ class TwitterApiService {
                 authorUsername = authorUsername,
                 tweetText = text,
                 thumbnailUrl = thumbnailUrl,
-                videoVariants = videoVariants,
+                videoVariants = videoVariants.distinctBy { it.url },
                 gifVariants = emptyList(),
                 m3u8Url = m3u8Url,
                 hasM3u8 = m3u8Url != null
@@ -372,54 +275,107 @@ class TwitterApiService {
         }
     }
 
-    // ==================== Strategy 4: Webpage Scraping ====================
-    private suspend fun tryWebpageScraping(tweetId: String, url: String): VideoInfo? {
+    // ==================== Strategy 2: FxTwitter Proxy ====================
+
+    private suspend fun tryFxTwitterApi(tweetId: String, url: String): VideoInfo? {
         return try {
+            val apiUrl = "$FXTWITTER_API/$tweetId"
             val request = Request.Builder()
-                .url("https://x.com/i/status/$tweetId")
-                .addHeader("User-Agent", "Mozilla/5.0 (compatible; Googlebot/2.1)")
+                .url(apiUrl)
+                .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                 .build()
 
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) return null
 
             val body = response.body?.string() ?: return null
-            parseWebpageResponse(body, tweetId, url)
+            val json = JsonParser.parseString(body).asJsonObject
+            val tweet = json.getAsJsonObject("tweet") ?: json
+
+            parseThirdPartyResponse(tweet, tweetId, url)
         } catch (e: Exception) {
             null
         }
     }
 
-    private fun parseWebpageResponse(html: String, tweetId: String, url: String): VideoInfo? {
+    // ==================== Strategy 3: VxTwitter Proxy ====================
+
+    private suspend fun tryVxTwitterApi(tweetId: String, url: String): VideoInfo? {
+        return try {
+            val apiUrl = "$VXTWITTER_API/$tweetId"
+            val request = Request.Builder()
+                .url(apiUrl)
+                .addHeader("User-Agent", "Mozilla/5.0")
+                .build()
+
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) return null
+
+            val body = response.body?.string() ?: return null
+            val json = JsonParser.parseString(body).asJsonObject
+
+            parseThirdPartyResponse(json, tweetId, url)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun parseThirdPartyResponse(json: com.google.gson.JsonObject, tweetId: String, url: String): VideoInfo? {
         try {
+            val id = json.get("tweet_id")?.asString ?: json.get("id")?.asString ?: tweetId
+            val text = json.get("text")?.asString ?: ""
+            val user = json.getAsJsonObject("user") ?: json.getAsJsonObject("author")
+            val authorName = user?.get("name")?.asString ?: "Unknown"
+            val authorUsername = user?.get("screen_name")?.asString
+                ?: user?.get("username")?.asString ?: "unknown"
+
             val videoVariants = mutableListOf<VideoVariant>()
+            var thumbnailUrl: String? = null
             var m3u8Url: String? = null
 
-            // Extract m3u8 URL from page
-            val m3u8Pattern = Pattern.compile("https://video\\.twimg\\.com/[^\"\\s]+\\.m3u8[^\"\\s]*")
-            val m3u8Matcher = m3u8Pattern.matcher(html)
-            if (m3u8Matcher.find()) {
-                m3u8Url = m3u8Matcher.group()
-            }
+            // Parse media array
+            val mediaArray = json.getAsJsonArray("media")
+            if (mediaArray != null) {
+                for (media in mediaArray) {
+                    val mediaObj = media.asJsonObject
+                    thumbnailUrl = mediaObj.get("thumbnail_url")?.asString
+                        ?: mediaObj.get("media_url_https")?.asString ?: thumbnailUrl
 
-            // Extract direct MP4 URLs
-            val videoPattern = Pattern.compile("https://video\\.twimg\\.com/[^\"\\s]+\\.mp4[^\"\\s]*")
-            val videoMatcher = videoPattern.matcher(html)
-            while (videoMatcher.find()) {
-                val videoUrl = videoMatcher.group()
-                val bitrate = extractBitrateFromUrl(videoUrl)
-                videoVariants.add(VideoVariant(videoUrl, bitrate, "video/mp4"))
+                    // Check for direct m3u8
+                    val m3u8 = mediaObj.get("m3u8_url")?.asString
+                    if (m3u8 != null) m3u8Url = m3u8
+
+                    // Parse video variants
+                    val videoInfo = mediaObj.getAsJsonObject("video_info")
+                    if (videoInfo != null) {
+                        val variants = videoInfo.getAsJsonArray("variants")
+                        if (variants != null) {
+                            for (variant in variants) {
+                                val vObj = variant.asJsonObject
+                                val vUrl = vObj.get("url")?.asString ?: continue
+                                val bitrate = vObj.get("bitrate")?.asInt ?: 0
+                                val contentType = vObj.get("content_type")?.asString ?: ""
+
+                                if (contentType == "video/mp4") {
+                                    videoVariants.add(VideoVariant(vUrl, bitrate, "video/mp4"))
+                                } else if (vUrl.contains(".m3u8") && m3u8Url == null) {
+                                    m3u8Url = vUrl
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             if (videoVariants.isEmpty() && m3u8Url == null) return null
 
             return VideoInfo(
-                tweetId = tweetId,
+                tweetId = id,
                 tweetUrl = url,
-                authorName = "Twitter User",
-                authorUsername = "unknown",
-                tweetText = "",
-                thumbnailUrl = null,
+                authorName = authorName,
+                authorUsername = authorUsername,
+                tweetText = text,
+                thumbnailUrl = thumbnailUrl,
                 videoVariants = videoVariants,
                 gifVariants = emptyList(),
                 m3u8Url = m3u8Url,
@@ -432,15 +388,6 @@ class TwitterApiService {
 
     // ==================== M3U8 Parsing ====================
 
-    /**
-     * Parse an m3u8 playlist URL to extract separate audio and video stream URLs.
-     * Returns a list of M3u8Stream objects sorted by quality (highest first).
-     *
-     * Twitter/X uses HLS with separate audio and video renditions.
-     * The master playlist contains:
-     * - #EXT-X-MEDIA:TYPE=AUDIO → audio stream URL
-     * - #EXT-X-STREAM-INF → video stream URLs with bandwidth/resolution
-     */
     suspend fun parseM3u8Playlist(m3u8Url: String): Result<List<M3u8Stream>> = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder()
@@ -450,38 +397,34 @@ class TwitterApiService {
 
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
-                return@withContext Result.failure(Exception("Failed to fetch m3u8: ${response.code}"))
+                return@withContext Result.failure(Exception("获取 M3U8 失败: ${response.code}"))
             }
 
             val body = response.body?.string()
-                ?: return@withContext Result.failure(Exception("Empty m3u8 response"))
+                ?: return@withContext Result.failure(Exception("M3U8 响应为空"))
 
             val streams = parseM3u8Content(body, m3u8Url)
             if (streams.isEmpty()) {
-                return@withContext Result.failure(Exception("No streams found in m3u8"))
+                return@withContext Result.failure(Exception("M3U8 中未找到视频流"))
             }
 
             Result.success(streams.sortedByDescending { it.bandwidth })
         } catch (e: Exception) {
-            Result.failure(Exception("M3U8 parse error: ${e.message}"))
+            Result.failure(Exception("M3U8 解析错误: ${e.message}"))
         }
     }
 
     private fun parseM3u8Content(content: String, baseUrl: String): List<M3u8Stream> {
         val streams = mutableListOf<M3u8Stream>()
         val lines = content.lines()
+        val basePrefix = baseUrl.substringBeforeLast("/")
 
         var audioUrl: String? = null
-        var currentBandwidth = 0L
-        var currentResolution: String? = null
-
-        // Resolve relative URLs
-        val basePrefix = baseUrl.substringBeforeLast("/")
 
         for (i in lines.indices) {
             val line = lines[i].trim()
 
-            // Extract audio rendition URL
+            // Extract audio rendition
             if (line.startsWith("#EXT-X-MEDIA") && line.contains("AUDIO")) {
                 val uriMatch = Regex("URI=\"([^\"]+)\"").find(line)
                 if (uriMatch != null) {
@@ -489,25 +432,24 @@ class TwitterApiService {
                 }
             }
 
-            // Extract video stream info
+            // Extract video stream
             if (line.startsWith("#EXT-X-STREAM-INF")) {
                 val bandwidthMatch = Regex("BANDWIDTH=(\\d+)").find(line)
-                currentBandwidth = bandwidthMatch?.groupValues?.get(1)?.toLongOrNull() ?: 0
+                val bandwidth = bandwidthMatch?.groupValues?.get(1)?.toLongOrNull() ?: 0
 
                 val resolutionMatch = Regex("RESOLUTION=(\\d+x\\d+)").find(line)
-                currentResolution = resolutionMatch?.groupValues?.get(1)
+                val resolution = resolutionMatch?.groupValues?.get(1)
 
-                // Next line should be the URL
                 if (i + 1 < lines.size) {
                     val urlLine = lines[i + 1].trim()
                     if (urlLine.isNotEmpty() && !urlLine.startsWith("#")) {
                         val videoUrl = resolveUrl(urlLine, basePrefix)
-                        val quality = resolutionToQuality(currentResolution, currentBandwidth)
+                        val quality = resolutionToQuality(resolution, bandwidth)
                         streams.add(M3u8Stream(
                             videoUrl = videoUrl,
                             audioUrl = audioUrl,
-                            bandwidth = currentBandwidth,
-                            resolution = currentResolution,
+                            bandwidth = bandwidth,
+                            resolution = resolution,
                             quality = quality
                         ))
                     }
@@ -515,8 +457,7 @@ class TwitterApiService {
             }
         }
 
-        // If no streams found but content itself is a media playlist (has segments),
-        // treat the URL as a single stream
+        // If no streams but content has segments, treat as single stream
         if (streams.isEmpty() && content.contains("#EXTINF")) {
             streams.add(M3u8Stream(
                 videoUrl = baseUrl,
@@ -531,11 +472,8 @@ class TwitterApiService {
     }
 
     private fun resolveUrl(url: String, basePrefix: String): String {
-        return if (url.startsWith("http://") || url.startsWith("https://")) {
-            url
-        } else {
-            "$basePrefix/$url"
-        }
+        return if (url.startsWith("http://") || url.startsWith("https://")) url
+        else "$basePrefix/$url"
     }
 
     private fun resolutionToQuality(resolution: String?, bandwidth: Long): String {
@@ -544,8 +482,10 @@ class TwitterApiService {
             return when {
                 height >= 2160 -> "4K"
                 height >= 1440 -> "2K"
-                height >= 720 -> "HD (${height}p)"
-                height >= 480 -> "SD (${height}p)"
+                height >= 1080 -> "1080p"
+                height >= 720 -> "720p"
+                height >= 480 -> "480p"
+                height >= 360 -> "360p"
                 height > 0 -> "${height}p"
                 else -> "Unknown"
             }
@@ -569,20 +509,8 @@ class TwitterApiService {
         )
         for (pattern in patterns) {
             val matcher = pattern.matcher(url)
-            if (matcher.find()) {
-                return matcher.group(1)
-            }
+            if (matcher.find()) return matcher.group(1)
         }
         return null
-    }
-
-    private fun extractBitrateFromUrl(url: String): Int {
-        val bitratePattern = Pattern.compile("bitrate=(\\d+)")
-        val matcher = bitratePattern.matcher(url)
-        return if (matcher.find()) {
-            matcher.group(1)?.toIntOrNull() ?: 0
-        } else {
-            0
-        }
     }
 }
