@@ -131,7 +131,7 @@ class HomeFragment : Fragment() {
             allowFileAccess = true
             allowContentAccess = true
             mediaPlaybackRequiresUserGesture = false
-            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             userAgentString = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
             useWideViewPort = true
             loadWithOverviewMode = true
@@ -167,6 +167,13 @@ class HomeFragment : Fragment() {
                 // Handle video download links - open in player
                 if (isVideoUrl(url)) {
                     openPlayer(url)
+                    return true
+                }
+                // Domain whitelist: only allow known safe download sites to load in WebView
+                if (!isAllowedDomain(url)) {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    } catch (_: Exception) { }
                     return true
                 }
                 return false
@@ -235,31 +242,7 @@ class HomeFragment : Fragment() {
         }
 
         // Quick site chips
-        binding.chipXtDownloader.setOnClickListener {
-            currentSiteIndex = 0
-            binding.spinnerSite.setText(siteNames[0], false)
-            loadCurrentSite()
-        }
-        binding.chipSaveFrom.setOnClickListener {
-            currentSiteIndex = 1
-            binding.spinnerSite.setText(siteNames[1], false)
-            loadCurrentSite()
-        }
-        binding.chipSnapX.setOnClickListener {
-            currentSiteIndex = 2
-            binding.spinnerSite.setText(siteNames[2], false)
-            loadCurrentSite()
-        }
-        binding.chipTwitsave.setOnClickListener {
-            currentSiteIndex = 3
-            binding.spinnerSite.setText(siteNames[3], false)
-            loadCurrentSite()
-        }
-        binding.chipTwDown.setOnClickListener {
-            currentSiteIndex = 4
-            binding.spinnerSite.setText(siteNames[4], false)
-            loadCurrentSite()
-        }
+        setupChipListeners()
 
         // Bottom bar buttons
         binding.btnBack.setOnClickListener {
@@ -275,6 +258,23 @@ class HomeFragment : Fragment() {
             binding.webView.loadUrl("about:blank")
             binding.layoutEmpty.isVisible = true
             binding.layoutBottomBar.isVisible = false
+        }
+    }
+
+    private fun setupChipListeners() {
+        val chips = listOf(
+            binding.chipXtDownloader to 0,
+            binding.chipSaveFrom to 1,
+            binding.chipSnapX to 2,
+            binding.chipTwitsave to 3,
+            binding.chipTwDown to 4
+        )
+        chips.forEach { (chip, index) ->
+            chip.setOnClickListener {
+                currentSiteIndex = index
+                binding.spinnerSite.setText(siteNames[index], false)
+                loadCurrentSite()
+            }
         }
     }
 
@@ -365,6 +365,32 @@ class HomeFragment : Fragment() {
 
     private fun isTwitterUrl(url: String): Boolean {
         return url.contains("twitter.com") || url.contains("x.com")
+    }
+
+    /**
+     * Domain whitelist: only allow JS execution on known safe download sites.
+     * Other URLs are opened externally via Intent.ACTION_VIEW.
+     */
+    private val allowedDomains = listOf(
+        "x-twitter-downloader.com",
+        "savefrom.net",
+        "snapx.net",
+        "twitsave.com",
+        "twdown.net",
+        "www.x-twitter-downloader.com",
+        "www.savefrom.net",
+        "www.snapx.net",
+        "www.twitsave.com",
+        "www.twdown.net"
+    )
+
+    private fun isAllowedDomain(url: String): Boolean {
+        return try {
+            val host = Uri.parse(url).host ?: return false
+            allowedDomains.any { host == it || host.endsWith(".$it") }
+        } catch (e: Exception) {
+            false
+        }
     }
 
     private fun isVideoUrl(url: String): Boolean {

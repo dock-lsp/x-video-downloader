@@ -6,6 +6,9 @@ import android.app.NotificationManager
 import android.os.Build
 import com.xvideo.downloader.data.local.database.AppDatabase
 import com.xvideo.downloader.data.local.DownloadManager
+import okhttp3.ConnectionPool
+import okhttp3.OkHttpClient
+import java.util.concurrent.TimeUnit
 
 class App : Application() {
 
@@ -15,12 +18,24 @@ class App : Application() {
     lateinit var downloadManager: DownloadManager
         private set
 
+    lateinit var okHttpClient: OkHttpClient
+        private set
+
     override fun onCreate() {
         super.onCreate()
         instance = this
 
         // Initialize database
         database = AppDatabase.getInstance(this)
+
+        // Initialize shared OkHttpClient with connection pool
+        okHttpClient = OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .followRedirects(true)
+            .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
+            .build()
 
         // Initialize download manager
         downloadManager = DownloadManager(this)

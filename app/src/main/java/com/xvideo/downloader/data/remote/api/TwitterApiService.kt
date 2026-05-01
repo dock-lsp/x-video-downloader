@@ -1,5 +1,7 @@
 package com.xvideo.downloader.data.remote.api
 
+import com.xvideo.downloader.App
+import com.xvideo.downloader.BuildConfig
 import com.xvideo.downloader.data.model.*
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
@@ -8,7 +10,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaType
-import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
 /**
@@ -26,16 +27,21 @@ import java.util.regex.Pattern
  */
 class TwitterApiService {
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .followRedirects(true)
-        .followSslRedirects(true)
-        .build()
+    private val client: OkHttpClient
+        get() = try {
+            App.getInstance().okHttpClient
+        } catch (_: Exception) {
+            OkHttpClient.Builder()
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .followRedirects(true)
+                .followSslRedirects(true)
+                .build()
+        }
 
     companion object {
-        // Twitter's public Bearer token (embedded in their JS, publicly known)
-        private const val BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+        // Twitter's public Bearer token - sourced from BuildConfig for centralized management
+        private val BEARER_TOKEN = BuildConfig.TWITTER_BEARER_TOKEN
 
         // Guest token activation endpoint
         private const val GUEST_ACTIVATE_URL = "https://api.twitter.com/1.1/guest/activate.json"

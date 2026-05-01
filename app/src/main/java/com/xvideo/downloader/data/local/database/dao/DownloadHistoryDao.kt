@@ -39,4 +39,7 @@ interface DownloadHistoryDao {
 
     @Query("UPDATE download_history SET state = :state, progress = :progress, filePath = :filePath, fileSize = :fileSize WHERE id = :id")
     suspend fun updateProgress(id: String, state: Int, progress: Int, filePath: String?, fileSize: Long)
+
+    @Query("SELECT fileSize FROM download_history WHERE id = :id")
+    suspend fun getDownloadedBytes(id: String): Long?
 }

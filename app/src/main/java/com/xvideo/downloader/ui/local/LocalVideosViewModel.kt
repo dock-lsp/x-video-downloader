@@ -42,7 +42,7 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
                 }
                 _videos.value = sortVideos(videoList, _sortOrder.value)
             } catch (e: Exception) {
-                _toastMessage.emit("Error loading videos: ${e.message}")
+                _toastMessage.emit("加载视频失败: ${e.message}")
             } finally {
                 _isLoading.value = false
             }
@@ -73,7 +73,7 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
             projection,
             selection,
             selectionArgs,
-            "${MediaStore.Video.Media.DATE_ADDED} DESC"
+            "${MediaStore.Video.Media.DATE_ADDED} DESC LIMIT 500"
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
             val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
@@ -169,9 +169,9 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
                 }
                 if (deleted) {
                     _videos.value = _videos.value.filter { it.id != video.id }
-                    _toastMessage.emit("Video deleted")
+                    _toastMessage.emit("视频已删除")
                 } else {
-                    _toastMessage.emit("Failed to delete video")
+                    _toastMessage.emit("删除失败")
                 }
             } catch (e: Exception) {
                 _toastMessage.emit("Error: ${e.message}")

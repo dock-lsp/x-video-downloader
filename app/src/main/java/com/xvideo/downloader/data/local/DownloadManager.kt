@@ -22,7 +22,7 @@ import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
+import com.xvideo.downloader.App
 import com.xvideo.downloader.data.model.DownloadTask
 import com.xvideo.downloader.data.model.DownloadTaskState
 import com.xvideo.downloader.data.model.M3u8Stream
@@ -35,12 +35,8 @@ import kotlinx.coroutines.*
 
 class DownloadManager(private val context: Context) {
 
-    private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
-        .followRedirects(true)
-        .build()
+    private val okHttpClient: OkHttpClient
+        get() = App.getInstance().okHttpClient
 
     private val _activeDownloads = MutableStateFlow<List<DownloadTask>>(emptyList())
     val activeDownloads: StateFlow<List<DownloadTask>> = _activeDownloads.asStateFlow()
@@ -108,6 +104,13 @@ class DownloadManager(private val context: Context) {
         )
         downloadDao.insert(entity)
         _activeDownloads.value = _activeDownloads.value + task
+
+        // Start foreground service for download
+        context.startForegroundService(
+            Intent(context, com.xvideo.downloader.service.DownloadService::class.java).apply {
+                action = com.xvideo.downloader.service.DownloadService.ACTION_START
+            }
+        )
 
         val job = scope.launch {
             if (variant.url.contains(".m3u8") || videoInfo.hasM3u8Stream()) {
@@ -409,22 +412,38 @@ class DownloadManager(private val context: Context) {
         try {
             updateTaskState(task.id, DownloadTaskState.DOWNLOADING)
 
-            val request = Request.Builder().url(task.url)
+            // Support HTTP Range for resume: check existing file size
+            val existingBytes = if (outputFile.exists()) outputFile.length() else 0L
+            val requestBuilder = Request.Builder().url(task.url)
                 .addHeader("User-Agent", "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36")
-                .build()
 
-            val response = okHttpClient.newCall(request).execute()
-            if (!response.isSuccessful) throw Exception("HTTP ${response.code}: ${response.message}")
+            if (existingBytes > 0) {
+                requestBuilder.addHeader("Range", "bytes=$existingBytes-")
+            }
+
+            val response = okHttpClient.newCall(requestBuilder.build()).execute()
+            if (!response.isSuccessful && response.code != 206) {
+                throw Exception("HTTP ${response.code}: ${response.message}")
+            }
 
             val body = response.body ?: throw Exception("响应体为空")
             val contentLength = body.contentLength()
-            task.totalBytes = contentLength
+            // For resumed downloads (206), total = existing + remaining
+            val totalBytes = if (response.code == 206 && contentLength > 0) {
+                existingBytes + contentLength
+            } else {
+                contentLength
+            }
+            task.totalBytes = totalBytes
+
+            // Append to existing file for resume, otherwise create new
+            val appendMode = response.code == 206 && existingBytes > 0
+            var totalBytesRead = existingBytes
 
             body.byteStream().use { inputStream ->
-                FileOutputStream(outputFile).use { outputStream ->
+                FileOutputStream(outputFile, appendMode).use { outputStream ->
                     val buffer = ByteArray(8192)
                     var bytesRead: Int
-                    var totalBytesRead = 0L
                     var lastEmitTime = 0L
 
                     while (inputStream.read(buffer).also { bytesRead = it } != -1) {
@@ -437,14 +456,14 @@ class DownloadManager(private val context: Context) {
                         outputStream.write(buffer, 0, bytesRead)
                         totalBytesRead += bytesRead
 
-                        val progress = if (contentLength > 0) ((totalBytesRead * 100) / contentLength).toInt() else 0
+                        val progress = if (totalBytes > 0) ((totalBytesRead * 100) / totalBytes).toInt() else 0
                         task.downloadedBytes = totalBytesRead
                         task.progress = progress
 
                         val now = System.currentTimeMillis()
                         if (now - lastEmitTime > 200) {
                             lastEmitTime = now
-                            emitProgress(task.id, progress, totalBytesRead, contentLength)
+                            emitProgress(task.id, progress, totalBytesRead, totalBytes)
                         }
 
                         downloadDao.updateProgress(task.id, 1, progress, outputFile.absolutePath, totalBytesRead)
@@ -474,6 +493,9 @@ class DownloadManager(private val context: Context) {
 
         // Scan media store so it shows up in gallery
         com.xvideo.downloader.util.FileUtils.scanMediaStore(context, outputFile)
+
+        // Stop service if no more active downloads
+        stopServiceIfIdle()
     }
 
     // ==================== Controls ====================
@@ -487,13 +509,15 @@ class DownloadManager(private val context: Context) {
     fun resumeDownload(taskId: String) {
         val task = _activeDownloads.value.find { it.id == taskId } ?: return
         val file = File(task.outputPath)
-        if (file.exists()) file.delete()
 
         scope.launch {
             val job = scope.launch {
                 if (task.url.contains(".m3u8") || task.videoInfo.hasM3u8Stream()) {
+                    // M3U8 downloads restart from scratch (segment-based, no HTTP Range)
+                    if (file.exists()) file.delete()
                     downloadM3u8Stream(task, file, task.videoInfo)
                 } else {
+                    // Direct file: keep existing data for HTTP Range resume
                     downloadDirectFile(task, file)
                 }
             }
@@ -509,6 +533,9 @@ class DownloadManager(private val context: Context) {
         _activeDownloads.value = _activeDownloads.value.filter { it.id != taskId }
         File(getTempDirectory(), taskId).deleteRecursively()
         scope.launch { downloadDao.deleteById(taskId) }
+
+        // Stop service if no more active downloads
+        stopServiceIfIdle()
     }
 
     fun deleteDownload(taskId: String) {
@@ -533,6 +560,14 @@ class DownloadManager(private val context: Context) {
             statusText = statusText, isCompleted = isCompleted,
             filePath = filePath, error = error
         ))
+    }
+
+    private fun stopServiceIfIdle() {
+        if (_activeDownloads.value.isEmpty()) {
+            context.stopService(
+                Intent(context, com.xvideo.downloader.service.DownloadService::class.java)
+            )
+        }
     }
 
     fun getActiveDownloads(): List<DownloadTask> = _activeDownloads.value

@@ -4,8 +4,6 @@ import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.*
 import android.widget.PopupMenu
 import androidx.activity.viewModels
@@ -40,18 +38,6 @@ class PlayerActivity : AppCompatActivity() {
     private var playWhenReady = true
     private var currentPosition = 0L
     private var playbackPosition = 0L
-
-    private val updateHandler = Handler(Looper.getMainLooper())
-    private val updateRunnable = object : Runnable {
-        override fun run() {
-            player?.let {
-                binding.tvCurrentTime.text = FileUtils.formatDuration(it.currentPosition)
-                binding.seekBar.progress = it.currentPosition.toInt()
-                viewModel.updatePosition(it.currentPosition)
-            }
-            updateHandler.postDelayed(this, 500)
-        }
-    }
 
     // Gesture detection
     private var gestureDetector: GestureDetector? = null
@@ -155,11 +141,20 @@ class PlayerActivity : AppCompatActivity() {
     private fun setupGestures() {
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                if (viewModel.isLocked.value) {
+                    // When locked, only toggle unlock button visibility
+                    toggleControls()
+                    return true
+                }
                 toggleControls()
                 return true
             }
 
             override fun onDoubleTap(e: MotionEvent): Boolean {
+                if (viewModel.isLocked.value) {
+                    // When locked, skip double-tap seek
+                    return true
+                }
                 player?.let {
                     val screenWidth = binding.playerView.width
                     if (e.x < screenWidth / 2) {
@@ -390,11 +385,20 @@ class PlayerActivity : AppCompatActivity() {
             })
         }
 
-        updateHandler.post(updateRunnable)
+        lifecycleScope.launch {
+            while (true) {
+                player?.let {
+                    binding.tvCurrentTime.text = FileUtils.formatDuration(it.currentPosition)
+                    binding.seekBar.progress = it.currentPosition.toInt()
+                    viewModel.updatePosition(it.currentPosition)
+                }
+                kotlinx.coroutines.delay(500)
+            }
+        }
     }
 
     private fun releasePlayer() {
-        updateHandler.removeCallbacks(updateRunnable)
+        // Coroutine-based update is cancelled when lifecycleScope is cancelled (onStop)
         player?.let {
             playbackPosition = it.currentPosition
             playWhenReady = it.playWhenReady
