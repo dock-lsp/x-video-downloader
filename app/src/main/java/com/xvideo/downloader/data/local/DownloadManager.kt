@@ -197,7 +197,7 @@ class DownloadManager(private val context: Context) {
             Log.e(TAG, "M3U8 download failed", e)
             task.state = DownloadTaskState.FAILED
             updateTaskState(task.id, DownloadTaskState.FAILED)
-            emitProgress(task.id, error = "下载失败: ${e.message}")
+            emitProgress(task.id, 0, error = "下载失败: ${e.message}")
         } finally {
             tempDir.deleteRecursively()
         }
@@ -457,7 +457,7 @@ class DownloadManager(private val context: Context) {
         } catch (e: Exception) {
             task.state = DownloadTaskState.FAILED
             updateTaskState(task.id, DownloadTaskState.FAILED)
-            emitProgress(task.id, error = e.message ?: "下载失败")
+            emitProgress(task.id, 0, error = e.message ?: "下载失败")
         }
     }
 
