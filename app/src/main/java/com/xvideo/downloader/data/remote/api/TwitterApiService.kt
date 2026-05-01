@@ -47,7 +47,7 @@ class TwitterApiService {
         private const val GRAPHQL_FEATURES = """{"creator_subscriptions_tweet_preview_api_enabled":true,"tweetypie_unmention_optimization_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"responsive_web_twitter_article_tweet_consumption_enabled":false,"tweet_awards_web_tipping_enabled":false,"creator_subscriptions_quote_tweet_preview_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":true,"rweb_video_timestamps_enabled":true,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true}"""
 
         // Primary: x-twitter-downloader.com API (user preferred)
-        private const val XT_DOWNLOADER_API = "https://x-twitter-downloader.com/api/download"
+        private const val XT_DOWNLOADER_API = "https://x-twitter-downloader.com/api/parse-video"
 
         // Fallback: VxTwitter API (third-party proxy, no auth needed)
         private const val VXTWITTER_API = "https://api.vxtwitter.com"
@@ -101,12 +101,15 @@ class TwitterApiService {
 
     private suspend fun tryXTwitterDownloaderApi(url: String, tweetId: String): VideoInfo? {
         return try {
-            val apiUrl = "$XT_DOWNLOADER_API?url=${java.net.URLEncoder.encode(url, "UTF-8")}"
+            val jsonBody = """{"url":"$url"}"""
+            val requestBody = jsonBody.toRequestBody("application/json".toMediaType())
             val request = Request.Builder()
-                .url(apiUrl)
+                .url(XT_DOWNLOADER_API)
+                .post(requestBody)
                 .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .addHeader("Accept", "application/json")
                 .addHeader("Referer", "https://x-twitter-downloader.com/")
+                .addHeader("Origin", "https://x-twitter-downloader.com")
                 .build()
 
             val response = client.newCall(request).execute()
@@ -123,8 +126,11 @@ class TwitterApiService {
         try {
             val root = JsonParser.parseString(jsonStr).asJsonObject
 
-            // The API returns video info with download links
-            // Try to extract from various response formats
+            // Check for error response
+            if (root.has("success") && !root.get("success").asBoolean) {
+                return null
+            }
+
             val videoVariants = mutableListOf<VideoVariant>()
             var thumbnailUrl: String? = null
             var authorName = "Unknown"
@@ -132,14 +138,18 @@ class TwitterApiService {
             var tweetText = ""
             var m3u8Url: String? = null
 
-            // Extract author info if available
-            if (root.has("author")) {
+            // Extract author info
+            root.get("author")?.asString?.let { authorName = it }
+            root.get("author_name")?.asString?.let { authorName = it }
+            root.get("username")?.asString?.let { authorUsername = it }
+            root.get("screen_name")?.asString?.let { authorUsername = it }
+            if (root.has("author") && root.get("author").isJsonObject) {
                 val author = root.getAsJsonObject("author")
                 authorName = author?.get("name")?.asString ?: authorName
                 authorUsername = author?.get("username")?.asString
                     ?: author?.get("screen_name")?.asString ?: authorUsername
             }
-            if (root.has("user")) {
+            if (root.has("user") && root.get("user").isJsonObject) {
                 val user = root.getAsJsonObject("user")
                 authorName = user?.get("name")?.asString ?: authorName
                 authorUsername = user?.get("screen_name")?.asString
@@ -150,9 +160,15 @@ class TwitterApiService {
                 ?: root.get("thumbnail_url")?.asString
                 ?: root.get("image")?.asString
 
-            // Parse video links from various possible formats
-            // Format 1: { "video": { "url": "...", "quality": "..." } }
-            if (root.has("video")) {
+            // Primary format: { "download_url": "https://..." }
+            root.get("download_url")?.asString?.let { dUrl ->
+                if (dUrl.isNotBlank()) {
+                    videoVariants.add(VideoVariant(dUrl, 2500000, "video/mp4"))
+                }
+            }
+
+            // Format: { "video": { "url": "...", "quality": "..." } }
+            if (videoVariants.isEmpty() && root.has("video")) {
                 val video = root.getAsJsonObject("video")
                 if (video != null) {
                     val vUrl = video.get("url")?.asString
@@ -164,8 +180,8 @@ class TwitterApiService {
                 }
             }
 
-            // Format 2: { "videos": [{ "url": "...", "quality": "...", "bitrate": ... }] }
-            if (root.has("videos")) {
+            // Format: { "videos": [...] }
+            if (videoVariants.isEmpty() && root.has("videos")) {
                 val videos = root.getAsJsonArray("videos")
                 if (videos != null) {
                     for (v in videos) {
@@ -179,21 +195,15 @@ class TwitterApiService {
                 }
             }
 
-            // Format 3: { "download": { "url": "..." } } or { "download_url": "..." }
-            if (videoVariants.isEmpty()) {
-                if (root.has("download")) {
-                    val download = root.getAsJsonObject("download")
-                    val dUrl = download?.get("url")?.asString
-                    if (dUrl != null) {
-                        videoVariants.add(VideoVariant(dUrl, 2000000, "video/mp4"))
-                    }
-                }
-                root.get("download_url")?.asString?.let {
+            // Format: { "download": { "url": "..." } }
+            if (videoVariants.isEmpty() && root.has("download")) {
+                val download = root.getAsJsonObject("download")
+                download?.get("url")?.asString?.let {
                     videoVariants.add(VideoVariant(it, 2000000, "video/mp4"))
                 }
             }
 
-            // Format 4: { "formats": [{ "url": "...", "quality": "...", "ext": "mp4" }] }
+            // Format: { "formats": [...] }
             if (videoVariants.isEmpty() && root.has("formats")) {
                 val formats = root.getAsJsonArray("formats")
                 if (formats != null) {
@@ -212,7 +222,7 @@ class TwitterApiService {
                 }
             }
 
-            // Format 5: Direct array of links
+            // Format: { "links": [...] }
             if (videoVariants.isEmpty() && root.has("links")) {
                 val links = root.getAsJsonArray("links")
                 if (links != null) {
