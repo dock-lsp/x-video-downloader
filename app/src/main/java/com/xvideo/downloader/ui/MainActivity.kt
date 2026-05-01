@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -53,6 +54,18 @@ class MainActivity : AppCompatActivity() {
         // Load default fragment
         if (savedInstanceState == null) {
             loadFragment(HomeFragment())
+        }
+
+        // Handle back press for WebView navigation
+        onBackPressedDispatcher.addCallback(this) {
+            val currentFragment = supportFragmentManager.findFragmentById(R.id.fragmentContainer)
+            if (currentFragment is HomeFragment && currentFragment.canGoBack()) {
+                currentFragment.goBack()
+            } else {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+                isEnabled = true
+            }
         }
     }
 

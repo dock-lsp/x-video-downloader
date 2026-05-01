@@ -1,317 +1,270 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="?attr/colorSurface">
 
-    <!-- Header -->
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:text="X Video Downloader"
-        android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
-        android:textColor="?attr/colorOnSurface"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <!-- URL Input Card -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardInput"
+    <!-- Top Bar: Site Selector + URL Input -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="16dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="2dp"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle">
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:elevation="4dp"
+        android:background="?attr/colorSurface">
 
+        <!-- Title Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:hint="Paste Twitter/X URL"
-                app:boxCornerRadiusBottomEnd="8dp"
-                app:boxCornerRadiusBottomStart="8dp"
-                app:boxCornerRadiusTopEnd="8dp"
-                app:boxCornerRadiusTopStart="8dp"
-                app:startIconDrawable="@drawable/ic_link">
+                android:layout_weight="1"
+                android:text="@string/app_name"
+                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                android:textColor="?attr/colorOnSurface" />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etUrl"
-                    android:layout_width="match_parent"
+            <!-- Site selector dropdown -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                app:boxCornerRadiusTopEnd="8dp"
+                app:boxCornerRadiusBottomEnd="8dp"
+                app:boxCornerRadiusTopStart="8dp"
+                app:boxCornerRadiusBottomStart="8dp">
+
+                <AutoCompleteTextView
+                    android:id="@+id/spinnerSite"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:inputType="textUri"
-                    android:maxLines="2" />
+                    android:inputType="none"
+                    android:textSize="13sp"
+                    android:minWidth="140dp"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="6dp"
+                    tools:text="解析站点 ▾" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="horizontal">
+        </LinearLayout>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnPaste"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    android:text="Paste"
-                    app:icon="@drawable/ic_paste"
-                    style="@style/Widget.Material3.Button.OutlinedButton" />
+        <!-- URL Input Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnParse"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Parse"
-                    app:icon="@drawable/ic_search" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etUrl"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_url_input"
+                android:hint="粘贴 Twitter/X 链接..."
+                android:inputType="textUri"
+                android:maxLines="1"
+                android:paddingHorizontal="12dp"
+                android:textSize="14sp" />
 
-            </LinearLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGo"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:text="解析"
+                android:textSize="13sp"
+                app:cornerRadius="8dp" />
 
         </LinearLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+        <!-- Quick Site Buttons (Horizontal scroll) -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:scrollbars="none">
 
-    <!-- Progress Indicator -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipXtDownloader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="x-twitter-downloader"
+                    android:textSize="11sp"
+                    style="@style/Widget.Material3.Chip.Assist" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSaveFrom"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SaveFrom"
+                    android:textSize="11sp"
+                    android:layout_marginStart="4dp"
+                    style="@style/Widget.Material3.Chip.Assist" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSnapX"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SnapX"
+                    android:textSize="11sp"
+                    android:layout_marginStart="4dp"
+                    style="@style/Widget.Material3.Chip.Assist" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipTwitsave"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="TwitSave"
+                    android:textSize="11sp"
+                    android:layout_marginStart="4dp"
+                    style="@style/Widget.Material3.Chip.Assist" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipTwDown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="TwDown"
+                    android:textSize="11sp"
+                    android:layout_marginStart="4dp"
+                    style="@style/Widget.Material3.Chip.Assist" />
+
+            </LinearLayout>
+
+        </HorizontalScrollView>
+
+    </LinearLayout>
+
+    <!-- Loading Bar -->
     <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/progressBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="16dp"
         android:indeterminate="true"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/cardInput"
-        tools:visibility="visible" />
+        android:visibility="gone" />
 
-    <!-- Status Text -->
-    <TextView
-        android:id="@+id/tvStatusText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="8dp"
-        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:gravity="center"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/progressBar"
-        tools:text="正在解析 M3U8 播放列表..."
-        tools:visibility="visible" />
-
-    <!-- Error Message -->
-    <TextView
-        android:id="@+id/tvError"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="16dp"
-        android:padding="16dp"
-        android:background="@drawable/bg_error"
-        android:textColor="@color/error"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/cardInput"
-        tools:text="Error message here"
-        tools:visibility="visible" />
-
-    <!-- Result Card -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardResult"
+    <!-- WebView (Main Content) -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
-        android:visibility="gone"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="2dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardInput"
-        tools:visibility="visible">
+        android:layout_weight="1">
 
-        <androidx.core.widget.NestedScrollView
+        <WebView
+            android:id="@+id/webView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
+        <!-- Empty State (shown before any site is loaded) -->
+        <LinearLayout
+            android:id="@+id/layoutEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="32dp"
+            android:visibility="visible">
+
+            <ImageView
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@drawable/ic_link"
+                android:alpha="0.3"
+                app:tint="?attr/colorOnSurfaceVariant"
+                android:contentDescription="Parse" />
+
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="16dp"
+                android:text="粘贴 Twitter/X 视频链接\n选择解析站点后点击「解析」"
+                android:textAlignment="center"
+                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                android:textColor="?attr/colorOnSurfaceVariant" />
 
-                <!-- Thumbnail -->
-                <ImageView
-                    android:id="@+id/ivThumbnail"
-                    android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    android:scaleType="centerCrop"
-                    android:background="@drawable/ic_video_placeholder"
-                    android:contentDescription="Video thumbnail" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="或直接在下方浏览任意解析网站"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:alpha="0.7" />
 
-                <!-- Author Info -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+        </LinearLayout>
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+    </FrameLayout>
 
-                        <TextView
-                            android:id="@+id/tvAuthor"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            tools:text="John Doe" />
+    <!-- Bottom Navigation Bar for WebView -->
+    <LinearLayout
+        android:id="@+id/layoutBottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:background="?attr/colorSurface"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:paddingHorizontal="8dp">
 
-                        <TextView
-                            android:id="@+id/tvUsername"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            tools:text="@username" />
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Back"
+            app:tint="?attr/colorOnSurface" />
 
-                    </LinearLayout>
+        <ImageButton
+            android:id="@+id/btnForward"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_chevron_right"
+            android:contentDescription="Forward"
+            app:tint="?attr/colorOnSurface" />
 
-                    <TextView
-                        android:id="@+id/tvStreamType"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_quality_badge"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="4dp"
-                        android:textSize="11sp"
-                        android:textColor="@android:color/white"
-                        android:visibility="gone"
-                        tools:text="HLS (M3U8)"
-                        tools:visibility="visible" />
+        <ImageButton
+            android:id="@+id/btnRefresh"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_autoplay"
+            android:contentDescription="Refresh"
+            app:tint="?attr/colorOnSurface" />
 
-                </LinearLayout>
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
 
-                <!-- Tweet Text -->
-                <TextView
-                    android:id="@+id/tvTweetText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:maxLines="3"
-                    android:ellipsize="end"
-                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                    tools:text="This is the tweet text content..." />
+        <ImageButton
+            android:id="@+id/btnHome"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_home"
+            android:contentDescription="Home"
+            app:tint="?attr/colorOnSurface" />
 
-                <!-- Quality Selection -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="Select Quality"
-                    android:textAppearance="@style/TextAppearance.Material3.LabelLarge" />
+    </LinearLayout>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
-
-                    <AutoCompleteTextView
-                        android:id="@+id/spinnerQuality"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="none"
-                        android:text="HD" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Action Buttons -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnPlayOnline"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="8dp"
-                        android:text="Play"
-                        app:icon="@drawable/ic_play"
-                        style="@style/Widget.Material3.Button.TonalButton" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnDownload"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Download"
-                        app:icon="@drawable/ic_download" />
-
-                </LinearLayout>
-
-                <!-- GIF Download Button -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnDownloadGif"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Download GIF"
-                    android:visibility="gone"
-                    app:icon="@drawable/ic_gif"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    tools:visibility="visible" />
-
-                <!-- Download Progress -->
-                <LinearLayout
-                    android:id="@+id/downloadProgressLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:orientation="vertical"
-                    android:visibility="gone"
-                    tools:visibility="visible">
-
-                    <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:id="@+id/progressDownload"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:max="100" />
-
-                    <TextView
-                        android:id="@+id/tvProgress"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:layout_gravity="center"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                        tools:text="45%" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-        </androidx.core.widget.NestedScrollView>
-
-    </com.google.android.material.card.MaterialCardView>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>
