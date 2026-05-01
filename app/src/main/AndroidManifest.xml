@@ -56,6 +56,7 @@
         <activity
             android:name=".ui.player.PlayerActivity"
             android:exported="false"
+            android:hardwareAccelerated="true"
             android:configChanges="orientation|screenSize|keyboardHidden|screenLayout"
             android:theme="@style/Theme.XVideoDownloader.Fullscreen"
             android:launchMode="singleTop" />

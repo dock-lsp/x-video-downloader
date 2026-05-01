@@ -83,37 +83,20 @@
 
     </LinearLayout>
 
-    <!-- Center Controls (Play/Pause, Seek Feedback) -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="center">
-
-        <ImageButton
-            android:id="@+id/btnPlayPause"
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:layout_gravity="center"
-            android:background="@drawable/bg_circle_translucent"
-            android:src="@drawable/ic_play"
-            android:contentDescription="Play/Pause"
-            app:tint="@android:color/white" />
-
-        <TextView
-            android:id="@+id/tvSeekFeedback"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:background="@drawable/bg_seek_feedback"
-            android:paddingHorizontal="24dp"
-            android:paddingVertical="12dp"
-            android:textColor="@android:color/white"
-            android:textSize="24sp"
-            android:visibility="gone"
-            tools:text="+10s"
-            tools:visibility="visible" />
-
-    </FrameLayout>
+    <!-- Center Seek Feedback Only (no play/pause button) -->
+    <TextView
+        android:id="@+id/tvSeekFeedback"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_seek_feedback"
+        android:paddingHorizontal="24dp"
+        android:paddingVertical="12dp"
+        android:textColor="@android:color/white"
+        android:textSize="24sp"
+        android:visibility="gone"
+        tools:text="+10s"
+        tools:visibility="visible" />
 
     <!-- Bottom Controls -->
     <LinearLayout
@@ -166,6 +149,15 @@
             android:layout_marginTop="8dp"
             android:gravity="center"
             android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnPlayPause"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_play"
+                android:contentDescription="Play/Pause"
+                app:tint="@android:color/white" />
 
             <ImageButton
                 android:id="@+id/btnSpeed"

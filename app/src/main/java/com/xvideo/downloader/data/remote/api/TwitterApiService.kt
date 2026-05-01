@@ -46,6 +46,9 @@ class TwitterApiService {
         // GraphQL features (required parameter)
         private const val GRAPHQL_FEATURES = """{"creator_subscriptions_tweet_preview_api_enabled":true,"tweetypie_unmention_optimization_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"responsive_web_twitter_article_tweet_consumption_enabled":false,"tweet_awards_web_tipping_enabled":false,"creator_subscriptions_quote_tweet_preview_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":true,"rweb_video_timestamps_enabled":true,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"responsive_web_graphql_timeline_navigation_enabled":true}"""
 
+        // Primary: x-twitter-downloader.com API (user preferred)
+        private const val XT_DOWNLOADER_API = "https://x-twitter-downloader.com/api/download"
+
         // Fallback: VxTwitter API (third-party proxy, no auth needed)
         private const val VXTWITTER_API = "https://api.vxtwitter.com"
 
@@ -72,15 +75,19 @@ class TwitterApiService {
             val tweetId = extractTweetId(url)
                 ?: return@withContext Result.failure(Exception("无效的 Twitter/X 链接格式"))
 
-            // Strategy 1: Twitter GraphQL API (most reliable, same as website)
+            // Strategy 1: x-twitter-downloader.com (primary, user preferred)
+            val xtResult = tryXTwitterDownloaderApi(url, tweetId)
+            if (xtResult != null) return@withContext Result.success(xtResult)
+
+            // Strategy 2: Twitter GraphQL API (most reliable, same as website)
             val gqlResult = tryGraphQLApi(tweetId, url)
             if (gqlResult != null) return@withContext Result.success(gqlResult)
 
-            // Strategy 2: FxTwitter proxy
+            // Strategy 3: FxTwitter proxy
             val fxResult = tryFxTwitterApi(tweetId, url)
             if (fxResult != null) return@withContext Result.success(fxResult)
 
-            // Strategy 3: VxTwitter proxy
+            // Strategy 4: VxTwitter proxy
             val vxResult = tryVxTwitterApi(tweetId, url)
             if (vxResult != null) return@withContext Result.success(vxResult)
 
@@ -90,7 +97,169 @@ class TwitterApiService {
         }
     }
 
-    // ==================== Strategy 1: Twitter GraphQL API ====================
+    // ==================== Strategy 1: x-twitter-downloader.com ====================
+
+    private suspend fun tryXTwitterDownloaderApi(url: String, tweetId: String): VideoInfo? {
+        return try {
+            val apiUrl = "$XT_DOWNLOADER_API?url=${java.net.URLEncoder.encode(url, "UTF-8")}"
+            val request = Request.Builder()
+                .url(apiUrl)
+                .addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .addHeader("Accept", "application/json")
+                .addHeader("Referer", "https://x-twitter-downloader.com/")
+                .build()
+
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) return null
+
+            val body = response.body?.string() ?: return null
+            parseXTwitterDownloaderResponse(body, tweetId, url)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun parseXTwitterDownloaderResponse(jsonStr: String, tweetId: String, url: String): VideoInfo? {
+        try {
+            val root = JsonParser.parseString(jsonStr).asJsonObject
+
+            // The API returns video info with download links
+            // Try to extract from various response formats
+            val videoVariants = mutableListOf<VideoVariant>()
+            var thumbnailUrl: String? = null
+            var authorName = "Unknown"
+            var authorUsername = "unknown"
+            var tweetText = ""
+            var m3u8Url: String? = null
+
+            // Extract author info if available
+            if (root.has("author")) {
+                val author = root.getAsJsonObject("author")
+                authorName = author?.get("name")?.asString ?: authorName
+                authorUsername = author?.get("username")?.asString
+                    ?: author?.get("screen_name")?.asString ?: authorUsername
+            }
+            if (root.has("user")) {
+                val user = root.getAsJsonObject("user")
+                authorName = user?.get("name")?.asString ?: authorName
+                authorUsername = user?.get("screen_name")?.asString
+                    ?: user?.get("username")?.asString ?: authorUsername
+            }
+            tweetText = root.get("text")?.asString ?: root.get("description")?.asString ?: ""
+            thumbnailUrl = root.get("thumbnail")?.asString
+                ?: root.get("thumbnail_url")?.asString
+                ?: root.get("image")?.asString
+
+            // Parse video links from various possible formats
+            // Format 1: { "video": { "url": "...", "quality": "..." } }
+            if (root.has("video")) {
+                val video = root.getAsJsonObject("video")
+                if (video != null) {
+                    val vUrl = video.get("url")?.asString
+                    if (vUrl != null) {
+                        val quality = video.get("quality")?.asString ?: "HD"
+                        val bitrate = qualityToBitrate(quality)
+                        videoVariants.add(VideoVariant(vUrl, bitrate, "video/mp4"))
+                    }
+                }
+            }
+
+            // Format 2: { "videos": [{ "url": "...", "quality": "...", "bitrate": ... }] }
+            if (root.has("videos")) {
+                val videos = root.getAsJsonArray("videos")
+                if (videos != null) {
+                    for (v in videos) {
+                        val vObj = v.asJsonObject
+                        val vUrl = vObj.get("url")?.asString ?: continue
+                        val bitrate = vObj.get("bitrate")?.asInt
+                            ?: qualityToBitrate(vObj.get("quality")?.asString ?: "HD")
+                        val contentType = vObj.get("content_type")?.asString ?: "video/mp4"
+                        videoVariants.add(VideoVariant(vUrl, bitrate, contentType))
+                    }
+                }
+            }
+
+            // Format 3: { "download": { "url": "..." } } or { "download_url": "..." }
+            if (videoVariants.isEmpty()) {
+                if (root.has("download")) {
+                    val download = root.getAsJsonObject("download")
+                    val dUrl = download?.get("url")?.asString
+                    if (dUrl != null) {
+                        videoVariants.add(VideoVariant(dUrl, 2000000, "video/mp4"))
+                    }
+                }
+                root.get("download_url")?.asString?.let {
+                    videoVariants.add(VideoVariant(it, 2000000, "video/mp4"))
+                }
+            }
+
+            // Format 4: { "formats": [{ "url": "...", "quality": "...", "ext": "mp4" }] }
+            if (videoVariants.isEmpty() && root.has("formats")) {
+                val formats = root.getAsJsonArray("formats")
+                if (formats != null) {
+                    for (f in formats) {
+                        val fObj = f.asJsonObject
+                        val fUrl = fObj.get("url")?.asString ?: continue
+                        val ext = fObj.get("ext")?.asString ?: "mp4"
+                        if (ext == "mp4" || fUrl.contains(".mp4")) {
+                            val bitrate = fObj.get("bitrate")?.asInt
+                                ?: qualityToBitrate(fObj.get("quality")?.asString ?: "HD")
+                            videoVariants.add(VideoVariant(fUrl, bitrate, "video/mp4"))
+                        } else if (fUrl.contains(".m3u8")) {
+                            m3u8Url = fUrl
+                        }
+                    }
+                }
+            }
+
+            // Format 5: Direct array of links
+            if (videoVariants.isEmpty() && root.has("links")) {
+                val links = root.getAsJsonArray("links")
+                if (links != null) {
+                    for (l in links) {
+                        val lUrl = l.asString ?: continue
+                        if (lUrl.contains(".mp4") || lUrl.contains("video")) {
+                            videoVariants.add(VideoVariant(lUrl, 2000000, "video/mp4"))
+                        } else if (lUrl.contains(".m3u8")) {
+                            m3u8Url = lUrl
+                        }
+                    }
+                }
+            }
+
+            if (videoVariants.isEmpty() && m3u8Url == null) return null
+
+            return VideoInfo(
+                tweetId = tweetId,
+                tweetUrl = url,
+                authorName = authorName,
+                authorUsername = authorUsername,
+                tweetText = tweetText,
+                thumbnailUrl = thumbnailUrl,
+                videoVariants = videoVariants.distinctBy { it.url },
+                gifVariants = emptyList(),
+                m3u8Url = m3u8Url,
+                hasM3u8 = m3u8Url != null
+            )
+        } catch (e: Exception) {
+            return null
+        }
+    }
+
+    private fun qualityToBitrate(quality: String): Int {
+        return when (quality.lowercase()) {
+            "4k", "2160p" -> 8000000
+            "2k", "1440p" -> 5000000
+            "1080p", "hd", "high" -> 2500000
+            "720p", "medium" -> 1500000
+            "480p", "sd", "low" -> 800000
+            "360p" -> 500000
+            else -> 2000000
+        }
+    }
+
+    // ==================== Strategy 2: Twitter GraphQL API ====================
+    // (Direct Twitter API - same approach as x-twitter-downloader.com uses internally)
 
     private suspend fun tryGraphQLApi(tweetId: String, url: String): VideoInfo? {
         return try {

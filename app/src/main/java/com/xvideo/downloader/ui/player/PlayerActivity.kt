@@ -19,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import com.xvideo.downloader.R
 import com.xvideo.downloader.data.model.VideoInfo
@@ -328,7 +329,14 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun initializePlayer() {
-        player = ExoPlayer.Builder(this).build().also { exoPlayer ->
+        // Enable hardware-accelerated decoding with DefaultRenderersFactory
+        val renderersFactory = DefaultRenderersFactory(this)
+            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
+
+        player = ExoPlayer.Builder(this)
+            .setRenderersFactory(renderersFactory)
+            .build()
+            .also { exoPlayer ->
             binding.playerView.player = exoPlayer
 
             videoUrl?.let { url ->
