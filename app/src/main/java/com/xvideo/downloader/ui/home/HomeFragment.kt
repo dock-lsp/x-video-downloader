@@ -5,11 +5,13 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.webkit.*
 import android.widget.ArrayAdapter
 import androidx.activity.result.contract.ActivityResultContracts
@@ -62,6 +64,7 @@ class HomeFragment : Fragment() {
 
     private var currentSiteIndex = 0
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
+    private var keyboardListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
     private val fileChooserLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
@@ -87,7 +90,37 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupUI()
         setupWebView()
+        setupKeyboardListener()
         handleIntent(requireActivity().intent)
+    }
+
+    /**
+     * Listen for keyboard visibility changes.
+     * When keyboard opens, hide the WebView bottom bar so it doesn't cover the URL input.
+     * When keyboard closes, show it again (if WebView is active).
+     */
+    private fun setupKeyboardListener() {
+        val rootView = requireActivity().window.decorView
+        keyboardListener = ViewTreeObserver.OnGlobalLayoutListener {
+            val r = Rect()
+            rootView.getWindowVisibleDisplayFrame(r)
+            val screenHeight = rootView.height
+            val keypadHeight = screenHeight - r.bottom
+            val isKeyboardOpen = keypadHeight > screenHeight * 0.15
+
+            _binding?.let { b ->
+                if (isKeyboardOpen) {
+                    // Keyboard is open — hide the WebView bottom bar
+                    b.layoutBottomBar.isVisible = false
+                } else {
+                    // Keyboard closed — restore bottom bar if WebView has content
+                    if (b.webView.url != null && b.webView.url != "about:blank") {
+                        b.layoutBottomBar.isVisible = true
+                    }
+                }
+            }
+        }
+        rootView.viewTreeObserver.addOnGlobalLayoutListener(keyboardListener)
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -369,6 +402,11 @@ class HomeFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        // Remove keyboard listener to prevent leaks
+        keyboardListener?.let {
+            requireActivity().window.decorView.viewTreeObserver.removeOnGlobalLayoutListener(it)
+        }
+        keyboardListener = null
         binding.webView.destroy()
         _binding = null
         super.onDestroyView()

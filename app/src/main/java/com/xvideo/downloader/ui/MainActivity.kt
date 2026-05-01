@@ -3,15 +3,17 @@ package com.xvideo.downloader.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
+import android.view.View
+import android.view.ViewTreeObserver
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import com.xvideo.downloader.R
 import com.xvideo.downloader.databinding.ActivityMainBinding
@@ -21,11 +23,11 @@ import com.xvideo.downloader.ui.local.LocalVideosFragment
 import com.xvideo.downloader.ui.online.OnlinePlayerFragment
 import com.xvideo.downloader.ui.settings.SettingsFragment
 import com.xvideo.downloader.util.PermissionUtils
-import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private var keyboardListener: ViewTreeObserver.OnGlobalLayoutListener? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -46,6 +48,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupBottomNavigation()
+        setupKeyboardListener()
         checkPermissions()
 
         // Handle shared text from other apps
@@ -82,6 +85,28 @@ class MainActivity : AppCompatActivity() {
                 // The fragment will handle the URL
             }
         }
+    }
+
+    /**
+     * Hide bottom navigation when keyboard opens to avoid layout conflicts.
+     * Show it again when keyboard closes.
+     */
+    private fun setupKeyboardListener() {
+        val rootView = window.decorView
+        keyboardListener = ViewTreeObserver.OnGlobalLayoutListener {
+            val r = Rect()
+            rootView.getWindowVisibleDisplayFrame(r)
+            val screenHeight = rootView.height
+            val keypadHeight = screenHeight - r.bottom
+            val isKeyboardOpen = keypadHeight > screenHeight * 0.15
+
+            binding.bottomNavigation.isVisible = !isKeyboardOpen
+            // Adjust fragment container margin
+            val params = binding.fragmentContainer.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
+            params.bottomMargin = if (isKeyboardOpen) 0 else resources.getDimensionPixelSize(R.dimen.bottom_nav_height)
+            binding.fragmentContainer.layoutParams = params
+        }
+        rootView.viewTreeObserver.addOnGlobalLayoutListener(keyboardListener)
     }
 
     private fun setupBottomNavigation() {
@@ -127,5 +152,13 @@ class MainActivity : AppCompatActivity() {
         if (permissionsToRequest.isNotEmpty()) {
             permissionLauncher.launch(permissionsToRequest.toTypedArray())
         }
+    }
+
+    override fun onDestroy() {
+        keyboardListener?.let {
+            window.decorView.viewTreeObserver.removeOnGlobalLayoutListener(it)
+        }
+        keyboardListener = null
+        super.onDestroy()
     }
 }

@@ -8,140 +8,126 @@
     android:orientation="vertical"
     android:background="?attr/colorSurface">
 
-    <!-- Top Bar: Site Selector + URL Input -->
+    <!-- Top Bar: Site Selector + URL Input (compact) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="12dp"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="6dp"
         android:elevation="4dp"
         android:background="?attr/colorSurface">
 
-        <!-- Title Row -->
+        <!-- URL Input Row (title + input merged) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/app_name"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                android:textColor="?attr/colorOnSurface" />
-
-            <!-- Site selector dropdown -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                app:boxCornerRadiusTopEnd="8dp"
-                app:boxCornerRadiusBottomEnd="8dp"
-                app:boxCornerRadiusTopStart="8dp"
-                app:boxCornerRadiusBottomStart="8dp">
-
-                <AutoCompleteTextView
-                    android:id="@+id/spinnerSite"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:inputType="none"
-                    android:textSize="13sp"
-                    android:minWidth="140dp"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="6dp"
-                    tools:text="解析站点 ▾" />
-
-            </com.google.android.material.textfield.TextInputLayout>
-
-        </LinearLayout>
-
-        <!-- URL Input Row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etUrl"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="40dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_url_input"
                 android:hint="粘贴 Twitter/X 链接..."
                 android:inputType="textUri"
                 android:maxLines="1"
                 android:paddingHorizontal="12dp"
-                android:textSize="14sp" />
+                android:textSize="13sp"
+                android:drawableStart="@drawable/ic_link"
+                android:drawablePadding="8dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnGo"
                 android:layout_width="wrap_content"
-                android:layout_height="44dp"
-                android:layout_marginStart="8dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="6dp"
                 android:text="解析"
-                android:textSize="13sp"
+                android:textSize="12sp"
                 app:cornerRadius="8dp" />
 
         </LinearLayout>
 
-        <!-- Quick Site Buttons (Horizontal scroll) -->
+        <!-- Quick Site Chips (compact horizontal) -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:scrollbars="none">
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- Site selector dropdown inline -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusBottomStart="8dp">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/spinnerSite"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:inputType="none"
+                        android:textSize="11sp"
+                        android:minWidth="120dp"
+                        android:paddingHorizontal="8dp"
+                        tools:text="解析站点 ▾" />
+
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipXtDownloader"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="x-twitter-downloader"
-                    android:textSize="11sp"
+                    android:layout_height="32dp"
+                    android:text="x-downloader"
+                    android:textSize="10sp"
+                    android:layout_marginStart="4dp"
                     style="@style/Widget.Material3.Chip.Assist" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipSaveFrom"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="32dp"
                     android:text="SaveFrom"
-                    android:textSize="11sp"
+                    android:textSize="10sp"
                     android:layout_marginStart="4dp"
                     style="@style/Widget.Material3.Chip.Assist" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipSnapX"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="32dp"
                     android:text="SnapX"
-                    android:textSize="11sp"
+                    android:textSize="10sp"
                     android:layout_marginStart="4dp"
                     style="@style/Widget.Material3.Chip.Assist" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipTwitsave"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="32dp"
                     android:text="TwitSave"
-                    android:textSize="11sp"
+                    android:textSize="10sp"
                     android:layout_marginStart="4dp"
                     style="@style/Widget.Material3.Chip.Assist" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipTwDown"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="32dp"
                     android:text="TwDown"
-                    android:textSize="11sp"
+                    android:textSize="10sp"
                     android:layout_marginStart="4dp"
                     style="@style/Widget.Material3.Chip.Assist" />
 
@@ -170,41 +156,41 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <!-- Empty State (shown before any site is loaded) -->
+        <!-- Empty State (compact) -->
         <LinearLayout
             android:id="@+id/layoutEmpty"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
             android:orientation="vertical"
-            android:padding="32dp"
+            android:padding="24dp"
             android:visibility="visible">
 
             <ImageView
-                android:layout_width="80dp"
-                android:layout_height="80dp"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
                 android:src="@drawable/ic_link"
-                android:alpha="0.3"
+                android:alpha="0.25"
                 app:tint="?attr/colorOnSurfaceVariant"
                 android:contentDescription="Parse" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="粘贴 Twitter/X 视频链接\n选择解析站点后点击「解析」"
+                android:layout_marginTop="10dp"
+                android:text="粘贴 Twitter/X 视频链接，选择解析站点后点击「解析」"
                 android:textAlignment="center"
-                android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                 android:textColor="?attr/colorOnSurfaceVariant" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="4dp"
                 android:text="或直接在下方浏览任意解析网站"
                 android:textAppearance="@style/TextAppearance.Material3.BodySmall"
                 android:textColor="?attr/colorOnSurfaceVariant"
-                android:alpha="0.7" />
+                android:alpha="0.6" />
 
         </LinearLayout>
 
@@ -214,7 +200,7 @@
     <LinearLayout
         android:id="@+id/layoutBottomBar"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="44dp"
         android:background="?attr/colorSurface"
         android:elevation="8dp"
         android:gravity="center_vertical"
@@ -224,8 +210,8 @@
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_back"
             android:contentDescription="Back"
@@ -233,8 +219,8 @@
 
         <ImageButton
             android:id="@+id/btnForward"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_marginStart="4dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_chevron_right"
@@ -243,8 +229,8 @@
 
         <ImageButton
             android:id="@+id/btnRefresh"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_marginStart="4dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_autoplay"
@@ -258,8 +244,8 @@
 
         <ImageButton
             android:id="@+id/btnHome"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_home"
             android:contentDescription="Home"

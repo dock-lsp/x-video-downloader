@@ -10,15 +10,17 @@
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="56dp" />
+        android:layout_marginBottom="@dimen/bottom_nav_height" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:layout_gravity="bottom"
         android:background="?attr/colorSurface"
         app:menu="@menu/bottom_navigation"
-        app:labelVisibilityMode="labeled" />
+        app:labelVisibilityMode="labeled"
+        app:itemIconSize="20dp"
+        android:paddingTop="0dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
