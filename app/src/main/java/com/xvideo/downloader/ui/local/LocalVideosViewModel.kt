@@ -73,7 +73,7 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
             projection,
             selection,
             selectionArgs,
-            "${MediaStore.Video.Media.DATE_ADDED} DESC LIMIT 500"
+            "${MediaStore.Video.Media.DATE_ADDED} DESC"
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
             val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
@@ -118,7 +118,7 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
         // Also scan app-specific directory
         scanAppDirectory(videos)
 
-        return videos
+        return videos.take(500)
     }
 
     private fun scanAppDirectory(videos: MutableList<LocalVideo>) {
