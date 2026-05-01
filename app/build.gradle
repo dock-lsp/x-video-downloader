@@ -18,10 +18,13 @@ android {
     
     signingConfigs {
         release {
-            storeFile file('release.keystore')
-            storePassword 'qq900236'
-            keyAlias 'release'
-            keyPassword 'qq900236'
+            def keystoreFile = file('release.keystore')
+            if (keystoreFile.exists()) {
+                storeFile keystoreFile
+                storePassword 'qq900236'
+                keyAlias 'release'
+                keyPassword 'qq900236'
+            }
         }
     }
     
@@ -30,7 +33,9 @@ android {
             debuggable true
         }
         release {
-            signingConfig signingConfigs.release
+            if (file('release.keystore').exists()) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
         }
     }
