@@ -64,14 +64,15 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
             MediaStore.Video.Media.HEIGHT
         )
 
-        val selection = "${MediaStore.Video.Media.DATA} LIKE ?"
-        val selectionArgs = arrayOf("%XVideoDownloader%")
+        // Filter out .ts segment files from MediaStore query
+        val selection = "${MediaStore.Video.Media.DISPLAY_NAME} NOT LIKE ?"
+        val selectionArgs = arrayOf("%.ts")
 
         context.contentResolver.query(
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
             projection,
-            null,
-            null,
+            selection,
+            selectionArgs,
             "${MediaStore.Video.Media.DATE_ADDED} DESC"
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
@@ -124,7 +125,7 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
         val context = getApplication<Application>()
         val downloadDir = com.xvideo.downloader.util.FileUtils.getVideoDirectory(context)
 
-        downloadDir.listFiles()?.filter { it.isFile && it.extension == "mp4" }?.forEach { file ->
+        downloadDir.listFiles()?.filter { it.isFile && it.extension == "mp4" && !it.name.endsWith(".ts", ignoreCase = true) }?.forEach { file ->
             // Check if already in list
             if (videos.none { it.path == file.absolutePath }) {
                 videos.add(

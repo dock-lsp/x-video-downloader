@@ -178,7 +178,8 @@ class PlayerActivity : AppCompatActivity() {
 
         binding.playerView.setOnTouchListener { _, event ->
             if (viewModel.isLocked.value) {
-                binding.btnUnlock.visibility = View.VISIBLE
+                // When locked, let gesture detector handle single tap to toggle unlock button
+                gestureDetector?.onTouchEvent(event)
                 return@setOnTouchListener true
             }
 
@@ -233,11 +234,14 @@ class PlayerActivity : AppCompatActivity() {
             true
         }
 
-        // Lock touch listener
-        binding.btnUnlock.setOnTouchListener { _, event ->
+        // Unlock button click handler
+        binding.btnUnlock.setOnClickListener {
             viewModel.unlock()
             binding.btnUnlock.visibility = View.GONE
-            true
+            // Show controls after unlocking
+            binding.controlsOverlay.visibility = View.VISIBLE
+            binding.topControls.visibility = View.VISIBLE
+            binding.btnLock.visibility = View.VISIBLE
         }
     }
 
@@ -267,13 +271,16 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun toggleControls() {
         if (viewModel.isLocked.value) {
-            binding.btnUnlock.visibility = View.VISIBLE
+            // When locked, toggle unlock button visibility
+            val unlockVisible = binding.btnUnlock.visibility == View.VISIBLE
+            binding.btnUnlock.visibility = if (unlockVisible) View.GONE else View.VISIBLE
             return
         }
 
         val isVisible = binding.controlsOverlay.visibility == View.VISIBLE
         binding.controlsOverlay.visibility = if (isVisible) View.GONE else View.VISIBLE
         binding.topControls.visibility = if (isVisible) View.GONE else View.VISIBLE
+        binding.btnLock.visibility = if (isVisible) View.GONE else View.VISIBLE
     }
 
     private fun showSeekFeedback(delta: Long) {
@@ -306,7 +313,9 @@ class PlayerActivity : AppCompatActivity() {
                 launch {
                     viewModel.isLocked.collectLatest { isLocked ->
                         binding.controlsOverlay.visibility = if (isLocked) View.GONE else View.VISIBLE
-                        binding.btnLock.visibility = if (isLocked) View.GONE else View.VISIBLE
+                        // Lock button: show when controls visible and not locked
+                        binding.btnLock.visibility = View.GONE
+                        // Unlock button: hide when not locked (will show on tap)
                         binding.btnUnlock.visibility = if (isLocked) View.VISIBLE else View.GONE
                     }
                 }

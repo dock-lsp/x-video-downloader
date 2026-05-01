@@ -19,7 +19,7 @@
         android:layout_gravity="bottom"
         android:background="?attr/colorSurface"
         app:menu="@menu/bottom_navigation"
-        app:labelVisibilityMode="labeled"
+        app:labelVisibilityMode="unlabeled"
         app:itemIconSize="22dp"
         app:itemTextAppearanceActive="@style/BottomNavTextActive"
         app:itemTextAppearanceInactive="@style/BottomNavTextInactive"
