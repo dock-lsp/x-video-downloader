@@ -15,12 +15,14 @@
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="@dimen/bottom_nav_height"
         android:layout_gravity="bottom"
         android:background="?attr/colorSurface"
         app:menu="@menu/bottom_navigation"
         app:labelVisibilityMode="labeled"
-        app:itemIconSize="20dp"
-        android:paddingTop="0dp" />
+        app:itemIconSize="22dp"
+        app:itemTextAppearanceActive="@style/BottomNavTextActive"
+        app:itemTextAppearanceInactive="@style/BottomNavTextInactive"
+        app:elevation="8dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -136,8 +136,10 @@ class HomeFragment : Fragment() {
             useWideViewPort = true
             loadWithOverviewMode = true
             builtInZoomControls = true
-            displayZoomControls = false
+            displayZoomControls = true
             setSupportZoom(true)
+            setGeolocationEnabled(false)
+            databaseEnabled = true
             cacheMode = WebSettings.LOAD_DEFAULT
         }
 
