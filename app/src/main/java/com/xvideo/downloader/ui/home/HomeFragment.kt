@@ -262,6 +262,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupChipListeners() {
+        val siteNames = parseSites.map { "${it.name} · ${it.description}" }
         val chips = listOf(
             binding.chipXtDownloader to 0,
             binding.chipSaveFrom to 1,
