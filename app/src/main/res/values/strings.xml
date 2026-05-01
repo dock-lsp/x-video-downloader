@@ -154,4 +154,12 @@
     <!-- Additional strings -->
     <string name="video_details">Details</string>
     <string name="error_format">Error: %1$s</string>
+
+    <!-- Stream type -->
+    <string name="stream_hls">HLS (M3U8)</string>
+    <string name="stream_direct">Direct MP4</string>
+    <string name="parsing_m3u8">Parsing M3U8 playlist…</string>
+    <string name="downloading_video_stream">Downloading video stream…</string>
+    <string name="downloading_audio_stream">Downloading audio stream…</string>
+    <string name="merging_ffmpeg">Merging audio + video (FFmpeg)…</string>
 </resources>

@@ -1,5 +1,6 @@
 package com.xvideo.downloader.data.remote.repository
 
+import com.xvideo.downloader.data.model.M3u8Stream
 import com.xvideo.downloader.data.model.VideoInfo
 import com.xvideo.downloader.data.remote.api.TwitterApiService
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +26,10 @@ class VideoRepository(
                 emit(VideoParseState.Error(error.message ?: "Failed to parse video"))
             }
         )
+    }
+
+    suspend fun parseM3u8Playlist(m3u8Url: String): Result<List<M3u8Stream>> {
+        return twitterApiService.parseM3u8Playlist(m3u8Url)
     }
 
     fun isValidTwitterUrl(url: String): Boolean {

@@ -146,6 +146,14 @@
     <!-- Error prefix -->
     <string name="error">错误</string>
 
+    <!-- Stream type -->
+    <string name="stream_hls">HLS 流 (M3U8)</string>
+    <string name="stream_direct">直链 MP4</string>
+    <string name="parsing_m3u8">正在解析 M3U8 播放列表…</string>
+    <string name="downloading_video_stream">正在下载视频流…</string>
+    <string name="downloading_audio_stream">正在下载音频流…</string>
+    <string name="merging_ffmpeg">正在合并音视频 (FFmpeg)…</string>
+
     <!-- Online Player -->
     <string name="online_player">在线播放</string>
     <string name="nav_online">在线</string>

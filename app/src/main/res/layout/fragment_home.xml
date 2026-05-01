@@ -98,6 +98,21 @@
         app:layout_constraintTop_toBottomOf="@id/cardInput"
         tools:visibility="visible" />
 
+    <!-- Status Text -->
+    <TextView
+        android:id="@+id/tvStatusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:gravity="center"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/progressBar"
+        tools:text="正在解析 M3U8 播放列表..."
+        tools:visibility="visible" />
+
     <!-- Error Message -->
     <TextView
         android:id="@+id/tvError"
@@ -148,21 +163,50 @@
                     android:contentDescription="Video thumbnail" />
 
                 <!-- Author Info -->
-                <TextView
-                    android:id="@+id/tvAuthor"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                    tools:text="John Doe" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                <TextView
-                    android:id="@+id/tvUsername"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    tools:text="@username" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvAuthor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                            tools:text="John Doe" />
+
+                        <TextView
+                            android:id="@+id/tvUsername"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            tools:text="@username" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvStreamType"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_quality_badge"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="4dp"
+                        android:textSize="11sp"
+                        android:textColor="@android:color/white"
+                        android:visibility="gone"
+                        tools:text="HLS (M3U8)"
+                        tools:visibility="visible" />
+
+                </LinearLayout>
 
                 <!-- Tweet Text -->
                 <TextView

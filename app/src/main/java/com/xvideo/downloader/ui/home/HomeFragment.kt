@@ -18,6 +18,7 @@ import coil.load
 import com.google.android.material.snackbar.Snackbar
 import com.xvideo.downloader.R
 import com.xvideo.downloader.data.model.DownloadState
+import com.xvideo.downloader.data.model.M3u8Stream
 import com.xvideo.downloader.data.model.VideoInfo
 import com.xvideo.downloader.data.model.VideoVariant
 import com.xvideo.downloader.data.remote.repository.VideoParseState
@@ -33,6 +34,10 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: HomeViewModel by viewModels()
+
+    // Track which quality source we're using
+    private var currentM3u8Streams: List<M3u8Stream> = emptyList()
+    private var currentVideoVariants: List<VideoVariant> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,7 +55,6 @@ class HomeFragment : Fragment() {
         handleIntent(requireActivity().intent)
     }
 
-
     private fun handleIntent(intent: Intent?) {
         intent?.getStringExtra(Intent.EXTRA_TEXT)?.let { sharedText ->
             if (sharedText.contains("twitter.com") || sharedText.contains("x.com")) {
@@ -62,7 +66,6 @@ class HomeFragment : Fragment() {
 
     private fun setupUI() {
         binding.apply {
-            // Paste button
             btnPaste.setOnClickListener {
                 val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 val text = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
@@ -73,7 +76,6 @@ class HomeFragment : Fragment() {
                 }
             }
 
-            // Parse button
             btnParse.setOnClickListener {
                 val url = etUrl.text.toString()
                 if (url.isNotEmpty()) {
@@ -82,8 +84,6 @@ class HomeFragment : Fragment() {
                     showSnackbar(getString(R.string.please_enter_url))
                 }
             }
-
-            // Quality selection handled dynamically
         }
     }
 
@@ -109,6 +109,15 @@ class HomeFragment : Fragment() {
                 }
 
                 launch {
+                    viewModel.m3u8Streams.collectLatest { streams ->
+                        currentM3u8Streams = streams
+                        if (streams.isNotEmpty()) {
+                            setupM3u8QualityOptions(streams)
+                        }
+                    }
+                }
+
+                launch {
                     viewModel.toastMessage.collectLatest { message ->
                         showSnackbar(message)
                     }
@@ -127,13 +136,21 @@ class HomeFragment : Fragment() {
             when (state) {
                 is VideoParseState.Loading -> {
                     tvError.isVisible = false
+                    tvStatusText.text = getString(R.string.parsing)
+                    tvStatusText.isVisible = true
                 }
                 is VideoParseState.Error -> {
                     tvError.text = state.message
                     tvError.isVisible = true
                     cardResult.isVisible = false
+                    tvStatusText.isVisible = false
                 }
-                else -> {}
+                is VideoParseState.Success -> {
+                    tvStatusText.isVisible = false
+                }
+                else -> {
+                    tvStatusText.isVisible = false
+                }
             }
         }
     }
@@ -154,15 +171,33 @@ class HomeFragment : Fragment() {
             tvUsername.text = "@${videoInfo.authorUsername}"
             tvTweetText.text = videoInfo.tweetText
 
-            // Quality options
-            setupQualityOptions(videoInfo)
+            // Show stream type indicator
+            if (videoInfo.hasM3u8Stream()) {
+                tvStreamType.text = "HLS (M3U8)"
+                tvStreamType.isVisible = true
+            } else {
+                tvStreamType.text = "Direct MP4"
+                tvStreamType.isVisible = true
+            }
+
+            // Setup quality options based on what's available
+            currentVideoVariants = videoInfo.getAvailableQualities()
+            if (currentM3u8Streams.isEmpty() && currentVideoVariants.isNotEmpty()) {
+                setupDirectQualityOptions(videoInfo)
+            }
+            // m3u8 options will be set when m3u8Streams flow emits
         }
     }
 
-    private fun setupQualityOptions(videoInfo: VideoInfo) {
-        val qualities = videoInfo.getAvailableQualities()
-        val qualityLabels = qualities.map { 
-            "${it.getQualityLabel()} (${FileUtils.formatFileSize(it.bitrate.toLong() * 60)})" 
+    /**
+     * Setup quality dropdown for direct MP4 variants (fallback path).
+     */
+    private fun setupDirectQualityOptions(videoInfo: VideoInfo) {
+        val qualities = currentVideoVariants
+        if (qualities.isEmpty()) return
+
+        val qualityLabels = qualities.map {
+            "${it.getQualityLabel()} - ${FileUtils.formatFileSize(it.bitrate.toLong() * 60)}"
         }
 
         val adapter = ArrayAdapter(
@@ -174,8 +209,8 @@ class HomeFragment : Fragment() {
         binding.spinnerQuality.setText(qualityLabels.firstOrNull() ?: "", false)
 
         binding.btnDownload.setOnClickListener {
-            val selectedIndex = qualities.indexOfFirst { 
-                it.getQualityLabel() == binding.spinnerQuality.text.toString().split(" ").first()
+            val selectedIndex = qualities.indexOfFirst {
+                it.getQualityLabel() == binding.spinnerQuality.text.toString().split(" - ").first()
             }
             if (selectedIndex >= 0) {
                 viewModel.startDownload(qualities[selectedIndex])
@@ -183,8 +218,8 @@ class HomeFragment : Fragment() {
         }
 
         binding.btnPlayOnline.setOnClickListener {
-            val selectedIndex = qualities.indexOfFirst { 
-                it.getQualityLabel() == binding.spinnerQuality.text.toString().split(" ").first()
+            val selectedIndex = qualities.indexOfFirst {
+                it.getQualityLabel() == binding.spinnerQuality.text.toString().split(" - ").first()
             }
             if (selectedIndex >= 0) {
                 openPlayer(videoInfo, qualities[selectedIndex])
@@ -204,6 +239,47 @@ class HomeFragment : Fragment() {
         }
     }
 
+    /**
+     * Setup quality dropdown for m3u8 HLS streams (new flow).
+     * Shows resolution/bandwidth options parsed from the m3u8 master playlist.
+     */
+    private fun setupM3u8QualityOptions(streams: List<M3u8Stream>) {
+        val qualityLabels = streams.map { stream ->
+            val sizeHint = if (stream.bandwidth > 0) {
+                " (~${FileUtils.formatFileSize(stream.bandwidth * 180 / 8)})"  // ~3 min estimate
+            } else ""
+            "${stream.quality}${stream.resolution?.let { " ($it)" } ?: ""}$sizeHint"
+        }
+
+        val adapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_dropdown_item_1line,
+            qualityLabels
+        )
+        binding.spinnerQuality.setAdapter(adapter)
+        binding.spinnerQuality.setText(qualityLabels.firstOrNull() ?: "", false)
+
+        binding.btnDownload.setOnClickListener {
+            val selectedIndex = qualityLabels.indexOf(binding.spinnerQuality.text.toString())
+            if (selectedIndex >= 0) {
+                viewModel.startM3u8Download(streams[selectedIndex])
+            }
+        }
+
+        binding.btnPlayOnline.setOnClickListener {
+            val selectedIndex = qualityLabels.indexOf(binding.spinnerQuality.text.toString())
+            if (selectedIndex >= 0) {
+                val stream = streams[selectedIndex]
+                val variant = VideoVariant(stream.videoUrl, (stream.bandwidth / 1000).toInt(), "video/mp4")
+                viewModel.currentVideoInfo.value?.let { info ->
+                    openPlayer(info, variant)
+                }
+            }
+        }
+
+        binding.btnDownloadGif.visibility = View.GONE
+    }
+
     private fun updateDownloadUI(state: DownloadState) {
         binding.apply {
             when (state) {
@@ -211,6 +287,7 @@ class HomeFragment : Fragment() {
                     downloadProgressLayout.isVisible = true
                     progressDownload.progress = state.progress
                     tvProgress.text = "${state.progress}%"
+                    tvStatusText.isVisible = false
                 }
                 is DownloadState.Completed -> {
                     downloadProgressLayout.isVisible = false
@@ -219,6 +296,10 @@ class HomeFragment : Fragment() {
                 is DownloadState.Error -> {
                     downloadProgressLayout.isVisible = false
                     showSnackbar(getString(R.string.error_format, state.message))
+                }
+                is DownloadState.Parsing -> {
+                    tvStatusText.text = getString(R.string.parsing)
+                    tvStatusText.isVisible = true
                 }
                 else -> {
                     downloadProgressLayout.isVisible = false

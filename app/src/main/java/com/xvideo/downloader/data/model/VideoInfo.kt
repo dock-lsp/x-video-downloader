@@ -13,6 +13,8 @@ data class VideoInfo(
     val thumbnailUrl: String?,
     val videoVariants: List<VideoVariant>,
     val gifVariants: List<GifVariant>,
+    val m3u8Url: String? = null,
+    val hasM3u8: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 ) : Parcelable {
 
@@ -28,6 +30,7 @@ data class VideoInfo(
     }
 
     fun hasGif(): Boolean = gifVariants.isNotEmpty()
+    fun hasM3u8Stream(): Boolean = hasM3u8 && m3u8Url != null
 }
 
 @Parcelize
@@ -39,9 +42,9 @@ data class VideoVariant(
 
     fun getQualityLabel(): String {
         return when {
-            bitrate >= 2000000 -> "4K"
-            bitrate >= 1000000 -> "2K"
-            bitrate >= 600000 -> "HD"
+            bitrate >= 8000000 -> "4K"
+            bitrate >= 4000000 -> "2K"
+            bitrate >= 2000000 -> "HD"
             else -> "SD"
         }
     }
@@ -57,6 +60,15 @@ data class GifVariant(
 data class AudioInfo(
     val url: String,
     val duration: Long
+) : Parcelable
+
+@Parcelize
+data class M3u8Stream(
+    val videoUrl: String,
+    val audioUrl: String?,
+    val bandwidth: Long,
+    val resolution: String?,
+    val quality: String
 ) : Parcelable
 
 @Parcelize

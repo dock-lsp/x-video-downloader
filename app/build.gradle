@@ -76,4 +76,5 @@ dependencies {
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     implementation 'androidx.coordinatorlayout:coordinatorlayout:1.2.0'
     implementation 'org.json:json:20231013'
+    implementation 'com.arthenica:ffmpeg-kit-full:6.0-2'
 }
