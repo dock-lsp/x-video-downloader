@@ -5,6 +5,7 @@
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>
+    <string name="nav_ai">AI</string>
     <string name="nav_downloads">Downloads</string>
     <string name="nav_local">Local</string>
     <string name="nav_settings">Settings</string>
