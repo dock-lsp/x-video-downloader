@@ -113,6 +113,9 @@ class AiFragment : Fragment() {
         // Settings button
         binding.btnAiSettings.setOnClickListener { showSettingsDialog() }
 
+        // Set initial selection
+        binding.btnChat.isSelected = true
+
         // Empty state - start new chat
         binding.btnStartChat.setOnClickListener {
             if (!viewModel.isConfigured()) {
