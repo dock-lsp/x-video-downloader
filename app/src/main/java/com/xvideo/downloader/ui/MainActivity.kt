@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.activity.addCallback
@@ -35,41 +36,55 @@ class MainActivity : AppCompatActivity() {
     ) { permissions ->
         val allGranted = permissions.entries.all { it.value }
         if (!allGranted) {
-            Snackbar.make(
-                binding.root,
-                R.string.permission_denied,
-                Snackbar.LENGTH_LONG
-            ).show()
+            try {
+                Snackbar.make(
+                    binding.root,
+                    R.string.permission_denied,
+                    Snackbar.LENGTH_LONG
+                ).show()
+            } catch (_: Exception) {}
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
 
-        setupBottomNavigation()
-        setupKeyboardListener()
-        checkPermissions()
+        try {
+            binding = ActivityMainBinding.inflate(layoutInflater)
+            setContentView(binding.root)
 
-        // Handle shared text from other apps
-        handleIntent(intent)
+            setupBottomNavigation()
+            setupKeyboardListener()
+            checkPermissions()
 
-        // Load default fragment
-        if (savedInstanceState == null) {
-            loadFragment(HomeFragment())
-        }
+            // Handle shared text from other apps
+            handleIntent(intent)
 
-        // Handle back press for WebView navigation
-        onBackPressedDispatcher.addCallback(this) {
-            val currentFragment = supportFragmentManager.findFragmentById(R.id.fragmentContainer)
-            if (currentFragment is HomeFragment && currentFragment.canGoBack()) {
-                currentFragment.goBack()
-            } else {
-                isEnabled = false
-                onBackPressedDispatcher.onBackPressed()
-                isEnabled = true
+            // Load default fragment
+            if (savedInstanceState == null) {
+                loadFragment(HomeFragment())
             }
+
+            // Handle back press for WebView navigation
+            onBackPressedDispatcher.addCallback(this) {
+                val currentFragment = supportFragmentManager.findFragmentById(R.id.fragmentContainer)
+                if (currentFragment is HomeFragment && currentFragment.canGoBack()) {
+                    currentFragment.goBack()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "onCreate failed", e)
+            // Write crash info so user can report it
+            try {
+                val crashFile = getExternalFilesDir(null)?.let { java.io.File(it, "crash_log.txt") }
+                val sw = java.io.StringWriter()
+                e.printStackTrace(java.io.PrintWriter(sw))
+                crashFile?.writeText("MainActivity.onCreate crash:\n$sw\n")
+            } catch (_: Exception) {}
         }
     }
 
@@ -79,35 +94,36 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleIntent(intent: Intent?) {
-        intent?.getStringExtra(Intent.EXTRA_TEXT)?.let { sharedText ->
-            if (sharedText.contains("twitter.com") || sharedText.contains("x.com")) {
-                // Navigate to home and paste URL
-                loadFragment(HomeFragment())
-                // The fragment will handle the URL
+        try {
+            intent?.getStringExtra(Intent.EXTRA_TEXT)?.let { sharedText ->
+                if (sharedText.contains("twitter.com") || sharedText.contains("x.com")) {
+                    loadFragment(HomeFragment())
+                }
             }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "handleIntent failed", e)
         }
     }
 
-    /**
-     * Hide bottom navigation when keyboard opens to avoid layout conflicts.
-     * Show it again when keyboard closes.
-     */
     private fun setupKeyboardListener() {
-        val rootView = window.decorView
-        keyboardListener = ViewTreeObserver.OnGlobalLayoutListener {
-            val r = Rect()
-            rootView.getWindowVisibleDisplayFrame(r)
-            val screenHeight = rootView.height
-            val keypadHeight = screenHeight - r.bottom
-            val isKeyboardOpen = keypadHeight > screenHeight * 0.15
+        try {
+            val rootView = window.decorView
+            keyboardListener = ViewTreeObserver.OnGlobalLayoutListener {
+                val r = Rect()
+                rootView.getWindowVisibleDisplayFrame(r)
+                val screenHeight = rootView.height
+                val keypadHeight = screenHeight - r.bottom
+                val isKeyboardOpen = keypadHeight > screenHeight * 0.15
 
-            binding.bottomNavigation.isVisible = !isKeyboardOpen
-            // Adjust fragment container margin
-            val params = binding.fragmentContainer.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
-            params.bottomMargin = if (isKeyboardOpen) 0 else resources.getDimensionPixelSize(R.dimen.bottom_nav_height)
-            binding.fragmentContainer.layoutParams = params
+                binding.bottomNavigation.isVisible = !isKeyboardOpen
+                val params = binding.fragmentContainer.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
+                params.bottomMargin = if (isKeyboardOpen) 0 else resources.getDimensionPixelSize(R.dimen.bottom_nav_height)
+                binding.fragmentContainer.layoutParams = params
+            }
+            rootView.viewTreeObserver.addOnGlobalLayoutListener(keyboardListener)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "setupKeyboardListener failed", e)
         }
-        rootView.viewTreeObserver.addOnGlobalLayoutListener(keyboardListener)
     }
 
     private fun setupBottomNavigation() {
@@ -135,12 +151,10 @@ class MainActivity : AppCompatActivity() {
     private fun checkPermissions() {
         val permissionsToRequest = mutableListOf<String>()
 
-        // Storage permissions
         if (!PermissionUtils.hasStoragePermission(this)) {
             permissionsToRequest.addAll(PermissionUtils.getRequiredStoragePermissions())
         }
 
-        // Notification permission (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     this,
