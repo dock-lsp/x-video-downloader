@@ -29,6 +29,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Generate release keystore
+        run: |
+          keytool -genkeypair -v -keystore app/release.keystore \
+            -alias release -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass qq900236 -keypass qq900236 \
+            -dname "CN=XVideoDownloader, OU=Dev, O=XVideo, L=Beijing, ST=Beijing, C=CN"
+
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
@@ -70,7 +77,7 @@ jobs:
             下载下方 Assets 中的 APK 文件安装到 Android 设备即可使用。
 
             - **Debug 版**: `app-debug.apk` (开发调试版，体积较大)
-            - **Release 版**: `app-release.apk` (正式发布版，推荐)
+            - **Release 版**: `app-release.apk` (正式发布版，推荐，已签名)
 
             ### 📋 更新内容
             - AI 编程助手功能
