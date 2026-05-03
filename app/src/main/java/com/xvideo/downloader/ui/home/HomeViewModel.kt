@@ -2,6 +2,7 @@ package com.xvideo.downloader.ui.home
 
 import android.app.Application
 import android.content.res.Resources
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.xvideo.downloader.App
@@ -26,6 +27,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = VideoRepository()
     private val downloadManager = App.getInstance().downloadManager
     private val resources: Resources = application.resources
+
+    init {
+        if (downloadManager == null) {
+            Log.e("HomeViewModel", "DownloadManager not available")
+        }
+    }
 
     private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
     val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
@@ -97,11 +104,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun startDownload(variant: VideoVariant) {
         val videoInfo = _currentVideoInfo.value ?: return
+        val dm = downloadManager ?: run {
+            viewModelScope.launch { _toastMessage.emit("下载管理器未初始化") }
+            return
+        }
 
         viewModelScope.launch {
             try {
                 _downloadState.value = DownloadState.Downloading("", 0, 0, 0)
-                val taskId = downloadManager.startDownload(videoInfo, variant)
+                val taskId = dm.startDownload(videoInfo, variant)
                 _currentTaskId.value = taskId
             } catch (e: Exception) {
                 val errorMsg = e.message ?: resources.getString(R.string.error_download_failed)
@@ -113,25 +124,27 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun startM3u8Download(stream: M3u8Stream) {
         val videoInfo = _currentVideoInfo.value ?: return
+        val dm = downloadManager ?: run {
+            viewModelScope.launch { _toastMessage.emit("下载管理器未初始化") }
+            return
+        }
 
         viewModelScope.launch {
             try {
                 _downloadState.value = DownloadState.Downloading("", 0, 0, 0)
 
-                // Create a VideoVariant from the M3u8Stream for the download manager
                 val variant = VideoVariant(
                     url = stream.videoUrl,
-                    bitrate = (stream.bandwidth / 1000).toInt(), // Convert to kbps-like value
+                    bitrate = (stream.bandwidth / 1000).toInt(),
                     contentType = "video/mp4"
                 )
 
-                // Update the videoInfo with the m3u8 URL so DownloadManager can use it
                 val updatedInfo = videoInfo.copy(
                     m3u8Url = stream.videoUrl,
                     hasM3u8 = true
                 )
 
-                val taskId = downloadManager.startDownload(updatedInfo, variant)
+                val taskId = dm.startDownload(updatedInfo, variant)
                 _currentTaskId.value = taskId
             } catch (e: Exception) {
                 val errorMsg = e.message ?: resources.getString(R.string.error_download_failed)

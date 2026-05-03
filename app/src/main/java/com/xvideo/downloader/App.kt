@@ -16,13 +16,16 @@ import java.util.concurrent.TimeUnit
 
 class App : Application() {
 
-    lateinit var database: AppDatabase
+    var database: AppDatabase? = null
         private set
 
-    lateinit var downloadManager: DownloadManager
+    var downloadManager: DownloadManager? = null
         private set
 
-    lateinit var okHttpClient: OkHttpClient
+    var okHttpClient: OkHttpClient = OkHttpClient()
+        private set
+
+    var isInitialized = false
         private set
 
     override fun onCreate() {
@@ -44,8 +47,8 @@ class App : Application() {
         instance = this
 
         // Initialize OkHttpClient first (least likely to fail)
-        okHttpClient = try {
-            OkHttpClient.Builder()
+        try {
+            okHttpClient = OkHttpClient.Builder()
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(60, TimeUnit.SECONDS)
                 .writeTimeout(60, TimeUnit.SECONDS)
@@ -53,25 +56,22 @@ class App : Application() {
                 .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
                 .build()
         } catch (e: Exception) {
-            Log.e(TAG, "OkHttpClient init failed", e)
-            OkHttpClient()
+            Log.e(TAG, "OkHttpClient custom config failed, using defaults", e)
+            okHttpClient = OkHttpClient()
         }
 
-        // Initialize database with error handling
-        database = try {
-            AppDatabase.getInstance(this)
+        // Initialize database
+        try {
+            database = AppDatabase.getInstance(this)
         } catch (e: Exception) {
             Log.e(TAG, "Database init failed", e)
-            // Retry — fallbackToDestructiveMigration should handle it
-            AppDatabase.getInstance(this)
         }
 
-        // Initialize download manager
-        downloadManager = try {
-            DownloadManager(this)
+        // Initialize download manager (depends on database)
+        try {
+            downloadManager = DownloadManager(this)
         } catch (e: Exception) {
             Log.e(TAG, "DownloadManager init failed", e)
-            DownloadManager(this)
         }
 
         // Create notification channels
@@ -80,6 +80,9 @@ class App : Application() {
         } catch (e: Exception) {
             Log.e(TAG, "Notification channels failed", e)
         }
+
+        isInitialized = true
+        Log.d(TAG, "App initialized successfully")
     }
 
     private fun createNotificationChannels() {
