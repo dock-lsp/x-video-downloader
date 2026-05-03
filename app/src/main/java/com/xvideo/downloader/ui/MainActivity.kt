@@ -17,6 +17,7 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
 import com.xvideo.downloader.R
 import com.xvideo.downloader.databinding.ActivityMainBinding
+import com.xvideo.downloader.ui.ai.AiFragment
 import com.xvideo.downloader.ui.downloads.DownloadsFragment
 import com.xvideo.downloader.ui.home.HomeFragment
 import com.xvideo.downloader.ui.local.LocalVideosFragment
@@ -113,6 +114,7 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             val fragment = when (item.itemId) {
                 R.id.nav_home -> HomeFragment()
+                R.id.nav_ai -> AiFragment()
                 R.id.nav_online -> OnlinePlayerFragment()
                 R.id.nav_downloads -> DownloadsFragment()
                 R.id.nav_local -> LocalVideosFragment()

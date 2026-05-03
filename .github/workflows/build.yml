@@ -46,3 +46,46 @@ jobs:
           name: x-video-downloader-release
           path: app/build/outputs/apk/release/*.apk
           retention-days: 90
+
+      - name: Get version info
+        id: version
+        run: |
+          VERSION=$(grep 'versionName' app/build.gradle | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Found version: $VERSION"
+
+      - name: Create Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          body: |
+            ## X Video Downloader v${{ steps.version.outputs.version }}
+
+            ### 📥 APK 下载
+
+            下载下方 Assets 中的 APK 文件安装到 Android 设备即可使用。
+
+            - **Debug 版**: `app-debug.apk` (开发调试版，体积较大)
+            - **Release 版**: `app-release.apk` (正式发布版，推荐)
+
+            ### 📋 更新内容
+            - AI 编程助手功能
+            - 自动生成代码文件（按目录结构创建）
+            - 对话历史记录
+            - 项目文件浏览器
+            - 代码自动保存
+
+            ### 🔧 安装说明
+            1. 下载 APK 文件
+            2. 在 Android 设备上允许"未知来源"安装
+            3. 点击 APK 文件安装
+          files: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

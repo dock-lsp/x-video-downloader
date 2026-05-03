@@ -5,6 +5,7 @@
 
     <!-- Navigation -->
     <string name="nav_home">홈</string>
+    <string name="nav_ai">AI</string>
     <string name="nav_downloads">다운로드</string>
     <string name="nav_local">로컬</string>
     <string name="nav_settings">설정</string>
