@@ -12,8 +12,8 @@ android {
         applicationId "com.xvideo.downloader"
         minSdk 24
         targetSdk 34
-        versionCode 3
-        versionName "1.2.0"
+        versionCode 4
+        versionName "1.2.1-debug"
         buildConfigField "String", "TWITTER_BEARER_TOKEN", "\"AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA\""
     }
     

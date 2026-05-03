@@ -4,10 +4,14 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import android.util.Log
 import com.xvideo.downloader.data.local.database.AppDatabase
 import com.xvideo.downloader.data.local.DownloadManager
 import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
+import java.io.File
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.util.concurrent.TimeUnit
 
 class App : Application() {
@@ -25,18 +29,25 @@ class App : Application() {
         super.onCreate()
         instance = this
 
-        try {
-            // Initialize database
-            database = AppDatabase.getInstance(this)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            // Retry once after clearing potentially corrupt state
-            database = try { AppDatabase.getInstance(this) } catch (e2: Exception) { throw e2 }
+        // Global crash handler - log crash and try to recover
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            try {
+                val sw = StringWriter()
+                throwable.printStackTrace(PrintWriter(sw))
+                Log.e(TAG, "Uncaught exception: $sw")
+
+                // Write crash log to file
+                val crashFile = File(filesDir, "crash_log.txt")
+                crashFile.writeText("Crash on thread ${thread.name}:\n$sw\n")
+            } catch (_: Exception) {}
+            // Call default handler (will crash)
+            defaultHandler?.uncaughtException(thread, throwable)
         }
 
-        try {
-            // Initialize shared OkHttpClient with connection pool
-            okHttpClient = OkHttpClient.Builder()
+        // Initialize OkHttpClient (least likely to fail)
+        okHttpClient = try {
+            OkHttpClient.Builder()
                 .connectTimeout(15, TimeUnit.SECONDS)
                 .readTimeout(60, TimeUnit.SECONDS)
                 .writeTimeout(60, TimeUnit.SECONDS)
@@ -44,24 +55,31 @@ class App : Application() {
                 .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
                 .build()
         } catch (e: Exception) {
-            e.printStackTrace()
-            okHttpClient = OkHttpClient()
+            Log.e(TAG, "OkHttpClient init failed", e)
+            OkHttpClient()
         }
 
-        try {
-            // Initialize download manager
-            downloadManager = DownloadManager(this)
+        // Initialize database
+        database = try {
+            AppDatabase.getInstance(this)
         } catch (e: Exception) {
-            e.printStackTrace()
-            // Create a minimal download manager
-            downloadManager = DownloadManager(this)
+            Log.e(TAG, "Database init failed, retrying", e)
+            AppDatabase.getInstance(this) // retry with destructive migration
         }
 
+        // Initialize download manager
+        downloadManager = try {
+            DownloadManager(this)
+        } catch (e: Exception) {
+            Log.e(TAG, "DownloadManager init failed", e)
+            DownloadManager(this) // will likely fail again, but lateinit needs a value
+        }
+
+        // Create notification channels
         try {
-            // Create notification channels
             createNotificationChannels()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Notification channels failed", e)
         }
     }
 
@@ -69,7 +87,6 @@ class App : Application() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = getSystemService(NotificationManager::class.java)
 
-            // Download notification channel
             val downloadChannel = NotificationChannel(
                 CHANNEL_DOWNLOADS,
                 "Downloads",
@@ -79,7 +96,6 @@ class App : Application() {
             }
             notificationManager.createNotificationChannel(downloadChannel)
 
-            // Foreground service channel
             val serviceChannel = NotificationChannel(
                 CHANNEL_SERVICE,
                 "Download Service",
@@ -92,6 +108,7 @@ class App : Application() {
     }
 
     companion object {
+        private const val TAG = "XVideoApp"
         const val CHANNEL_DOWNLOADS = "downloads"
         const val CHANNEL_SERVICE = "service"
 
