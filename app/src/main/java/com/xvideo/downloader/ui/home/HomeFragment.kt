@@ -92,6 +92,14 @@ class HomeFragment : Fragment() {
         setupWebView()
         setupKeyboardListener()
         handleIntent(requireActivity().intent)
+
+        // Auto-load default site on first launch so the screen isn't blank
+        if (savedInstanceState == null) {
+            val sharedText = requireActivity().intent?.getStringExtra(Intent.EXTRA_TEXT)
+            if (sharedText.isNullOrEmpty()) {
+                loadCurrentSite()
+            }
+        }
     }
 
     /**

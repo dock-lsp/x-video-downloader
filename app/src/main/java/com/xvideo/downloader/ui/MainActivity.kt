@@ -49,10 +49,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        try {
-            binding = ActivityMainBinding.inflate(layoutInflater)
-            setContentView(binding.root)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
+        try {
             setupBottomNavigation()
             setupKeyboardListener()
             checkPermissions()
@@ -77,14 +77,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } catch (e: Exception) {
-            Log.e("MainActivity", "onCreate failed", e)
-            // Write crash info so user can report it
-            try {
-                val crashFile = getExternalFilesDir(null)?.let { java.io.File(it, "crash_log.txt") }
-                val sw = java.io.StringWriter()
-                e.printStackTrace(java.io.PrintWriter(sw))
-                crashFile?.writeText("MainActivity.onCreate crash:\n$sw\n")
-            } catch (_: Exception) {}
+            Log.e("MainActivity", "onCreate setup failed", e)
+            // Ensure at least the home fragment is loaded even if other setup fails
+            if (savedInstanceState == null) {
+                try {
+                    loadFragment(HomeFragment())
+                } catch (_: Exception) {}
+            }
         }
     }
 

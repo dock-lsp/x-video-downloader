@@ -5,6 +5,7 @@
 
     <!-- Navigation -->
     <string name="nav_home">首页</string>
+    <string name="nav_ai">AI</string>
     <string name="nav_downloads">下载</string>
     <string name="nav_local">本地</string>
     <string name="nav_settings">设置</string>
