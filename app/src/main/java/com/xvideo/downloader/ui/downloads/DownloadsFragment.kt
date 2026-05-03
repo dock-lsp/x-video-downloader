@@ -133,9 +133,19 @@ class DownloadsFragment : Fragment() {
 
     private fun shareFile(item: DownloadHistoryEntity) {
         item.filePath?.let { path ->
+            val file = java.io.File(path)
+            if (!file.exists()) {
+                showSnackbar(getString(R.string.file_not_found))
+                return
+            }
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                requireContext(),
+                "${requireContext().packageName}.fileprovider",
+                file
+            )
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "video/mp4"
-                putExtra(Intent.EXTRA_STREAM, android.net.Uri.parse(path))
+                putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             startActivity(Intent.createChooser(intent, getString(R.string.share_video)))

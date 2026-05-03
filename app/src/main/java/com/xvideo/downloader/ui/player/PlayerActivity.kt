@@ -155,15 +155,17 @@ class PlayerActivity : AppCompatActivity() {
                     // When locked, skip double-tap seek
                     return true
                 }
-                player?.let {
+                player?.let { p ->
                     val screenWidth = binding.playerView.width
                     if (e.x < screenWidth / 2) {
                         // Double tap left - rewind 10s
-                        it.seekTo(maxOf(0, it.currentPosition - 10000))
+                        p.seekTo(maxOf(0, p.currentPosition - 10000))
                         showSeekFeedback(-10000)
                     } else {
                         // Double tap right - forward 10s
-                        it.seekTo(minOf(it.duration, it.currentPosition + 10000))
+                        if (p.duration > 0) {
+                            p.seekTo(minOf(p.duration, p.currentPosition + 10000))
+                        }
                         showSeekFeedback(10000)
                     }
                 }
@@ -193,10 +195,11 @@ class PlayerActivity : AppCompatActivity() {
                     if (abs(deltaX) > 50 && abs(deltaX) > abs(deltaY) && !isSeeking) {
                         // Horizontal seek
                         isSeeking = true
-                        val seekDelta = ((deltaX / binding.playerView.width) * player?.duration!! / 10).toLong()
-                        seekDelta.let {
-                            player?.seekTo(player!!.currentPosition + it)
-                            showSeekFeedback(it)
+                        val currentPlayer = player
+                        if (currentPlayer != null && currentPlayer.duration > 0) {
+                            val delta = ((deltaX / binding.playerView.width) * currentPlayer.duration / 10).toLong()
+                            currentPlayer.seekTo(maxOf(0, minOf(currentPlayer.duration, currentPlayer.currentPosition + delta)))
+                            showSeekFeedback(delta)
                         }
                     } else if (abs(deltaY) > 50 && abs(deltaY) > abs(deltaX) && !isSeeking) {
                         // Vertical volume/brightness

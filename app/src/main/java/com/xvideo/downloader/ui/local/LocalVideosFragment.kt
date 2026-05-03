@@ -198,9 +198,19 @@ class LocalVideosFragment : Fragment() {
     }
 
     private fun shareVideo(video: LocalVideo) {
+        val file = java.io.File(video.path)
+        val shareUri = if (file.exists()) {
+            androidx.core.content.FileProvider.getUriForFile(
+                requireContext(),
+                "${requireContext().packageName}.fileprovider",
+                file
+            )
+        } else {
+            video.uri
+        }
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "video/mp4"
-            putExtra(Intent.EXTRA_STREAM, video.uri)
+            putExtra(Intent.EXTRA_STREAM, shareUri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         startActivity(Intent.createChooser(intent, getString(R.string.share_video)))
