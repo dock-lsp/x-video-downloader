@@ -110,6 +110,9 @@ class AiFragment : Fragment() {
         binding.btnProjects.setOnClickListener { showProjectsPanel() }
         binding.btnHistory.setOnClickListener { showHistoryPanel() }
 
+        // Set initial selection state
+        binding.btnChat.isSelected = true
+
         // Settings button
         binding.btnAiSettings.setOnClickListener { showSettingsDialog() }
 
