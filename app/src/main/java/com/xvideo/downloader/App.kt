@@ -25,23 +25,44 @@ class App : Application() {
         super.onCreate()
         instance = this
 
-        // Initialize database
-        database = AppDatabase.getInstance(this)
+        try {
+            // Initialize database
+            database = AppDatabase.getInstance(this)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Retry once after clearing potentially corrupt state
+            database = try { AppDatabase.getInstance(this) } catch (e2: Exception) { throw e2 }
+        }
 
-        // Initialize shared OkHttpClient with connection pool
-        okHttpClient = OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
-            .followRedirects(true)
-            .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
-            .build()
+        try {
+            // Initialize shared OkHttpClient with connection pool
+            okHttpClient = OkHttpClient.Builder()
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
+                .followRedirects(true)
+                .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
+                .build()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            okHttpClient = OkHttpClient()
+        }
 
-        // Initialize download manager
-        downloadManager = DownloadManager(this)
+        try {
+            // Initialize download manager
+            downloadManager = DownloadManager(this)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Create a minimal download manager
+            downloadManager = DownloadManager(this)
+        }
 
-        // Create notification channels
-        createNotificationChannels()
+        try {
+            // Create notification channels
+            createNotificationChannels()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun createNotificationChannels() {

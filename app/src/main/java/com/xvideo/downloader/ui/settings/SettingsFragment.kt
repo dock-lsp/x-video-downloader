@@ -62,6 +62,11 @@ class SettingsFragment : Fragment() {
             viewModel.setAutoPlay(isChecked)
         }
 
+        // Speed limit
+        binding.itemSpeedLimit.setOnClickListener {
+            showSpeedLimitDialog()
+        }
+
         // Clear cache
         binding.itemClearCache.setOnClickListener {
             MaterialAlertDialogBuilder(requireContext())
@@ -144,6 +149,21 @@ class SettingsFragment : Fragment() {
             .show()
     }
 
+    private fun showSpeedLimitDialog() {
+        val labels = SettingsViewModel.SPEED_LIMIT_LABELS.toTypedArray()
+        val currentLimit = viewModel.speedLimit.value
+        val currentIndex = SettingsViewModel.SPEED_LIMIT_VALUES.indexOf(currentLimit).coerceAtLeast(0)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.speed_limit)
+            .setSingleChoiceItems(labels, currentIndex) { dialog, which ->
+                viewModel.setSpeedLimit(SettingsViewModel.SPEED_LIMIT_VALUES[which])
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
     private fun showAboutDialog() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.app_name)
@@ -181,6 +201,13 @@ class SettingsFragment : Fragment() {
                 launch {
                     viewModel.autoPlay.collectLatest { enabled ->
                         binding.switchAutoPlay.isChecked = enabled
+                    }
+                }
+
+                launch {
+                    viewModel.speedLimit.collectLatest { limit ->
+                        val index = SettingsViewModel.SPEED_LIMIT_VALUES.indexOf(limit).coerceAtLeast(0)
+                        binding.tvSpeedLimitValue.text = SettingsViewModel.SPEED_LIMIT_LABELS[index]
                     }
                 }
 

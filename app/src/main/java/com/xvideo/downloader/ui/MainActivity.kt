@@ -45,31 +45,42 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
 
-        setupBottomNavigation()
-        setupKeyboardListener()
-        checkPermissions()
+        try {
+            binding = ActivityMainBinding.inflate(layoutInflater)
+            setContentView(binding.root)
 
-        // Handle shared text from other apps
-        handleIntent(intent)
+            setupBottomNavigation()
+            setupKeyboardListener()
+            checkPermissions()
 
-        // Load default fragment
-        if (savedInstanceState == null) {
-            loadFragment(HomeFragment())
-        }
+            // Handle shared text from other apps
+            handleIntent(intent)
 
-        // Handle back press for WebView navigation
-        onBackPressedDispatcher.addCallback(this) {
-            val currentFragment = supportFragmentManager.findFragmentById(R.id.fragmentContainer)
-            if (currentFragment is HomeFragment && currentFragment.canGoBack()) {
-                currentFragment.goBack()
-            } else {
-                isEnabled = false
-                onBackPressedDispatcher.onBackPressed()
-                isEnabled = true
+            // Load default fragment
+            if (savedInstanceState == null) {
+                loadFragment(HomeFragment())
             }
+
+            // Handle back press for WebView navigation
+            onBackPressedDispatcher.addCallback(this) {
+                val currentFragment = supportFragmentManager.findFragmentById(R.id.fragmentContainer)
+                if (currentFragment is HomeFragment && currentFragment.canGoBack()) {
+                    currentFragment.goBack()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // If basic setup fails, try loading just the home fragment
+            try {
+                if (savedInstanceState == null) {
+                    loadFragment(HomeFragment())
+                }
+            } catch (_: Exception) {}
         }
     }
 

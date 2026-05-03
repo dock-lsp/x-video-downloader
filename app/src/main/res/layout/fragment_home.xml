@@ -131,6 +131,16 @@
                     android:layout_marginStart="4dp"
                     style="@style/Widget.Material3.Chip.Assist" />
 
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipBatch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="批量下载"
+                    android:textSize="10sp"
+                    android:layout_marginStart="4dp"
+                    app:chipBackgroundColor="?attr/colorPrimaryContainer"
+                    style="@style/Widget.Material3.Chip.Assist" />
+
             </LinearLayout>
 
         </HorizontalScrollView>

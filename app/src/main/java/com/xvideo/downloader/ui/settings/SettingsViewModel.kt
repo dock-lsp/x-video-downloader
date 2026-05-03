@@ -32,6 +32,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _autoPlay = MutableStateFlow(getAutoPlay())
     val autoPlay: StateFlow<Boolean> = _autoPlay.asStateFlow()
 
+    private val _speedLimit = MutableStateFlow(getSpeedLimit())
+    val speedLimit: StateFlow<Long> = _speedLimit.asStateFlow()
+
     private val _appLanguage = MutableStateFlow(getAppLanguage())
     val appLanguage: StateFlow<String> = _appLanguage.asStateFlow()
 
@@ -52,6 +55,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private fun getAutoPlay(): Boolean {
         return prefs.getBoolean("auto_play", true)
+    }
+
+    private fun getSpeedLimit(): Long {
+        return prefs.getLong("speed_limit", 0L)
     }
 
     private fun getAppLanguage(): String {
@@ -77,6 +84,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setAutoPlay(enabled: Boolean) {
         prefs.edit().putBoolean("auto_play", enabled).apply()
         _autoPlay.value = enabled
+    }
+
+    fun setSpeedLimit(bytesPerSecond: Long) {
+        prefs.edit().putLong("speed_limit", bytesPerSecond).apply()
+        _speedLimit.value = bytesPerSecond
+        // Apply to download manager
+        try {
+            com.xvideo.downloader.App.getInstance().downloadManager.setSpeedLimit(bytesPerSecond)
+        } catch (_: Exception) {}
     }
 
     fun setAppLanguage(language: String) {
@@ -122,6 +138,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
         val THEME_OPTIONS = listOf("System Default", "Light", "Dark")
         val QUALITY_OPTIONS = listOf("Best", "4K", "2K", "HD", "SD")
+        val SPEED_LIMIT_LABELS = listOf("不限速", "1 MB/s", "2 MB/s", "5 MB/s")
+        val SPEED_LIMIT_VALUES = listOf(0L, 1_048_576L, 2_097_152L, 5_242_880L)
         
         const val LANG_SYSTEM = "system"
         const val LANG_ENGLISH = "en"

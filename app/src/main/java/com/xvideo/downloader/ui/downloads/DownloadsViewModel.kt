@@ -12,8 +12,8 @@ import kotlinx.coroutines.launch
 
 class DownloadsViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val downloadManager = App.getInstance().downloadManager
-    private val database = App.getInstance().database
+    private val downloadManager = try { App.getInstance().downloadManager } catch (_: Exception) { DownloadManager(application) }
+    private val database = try { App.getInstance().database } catch (_: Exception) { com.xvideo.downloader.data.local.database.AppDatabase.getInstance(application) }
     private val downloadHistoryDao = database.downloadHistoryDao()
 
     val activeDownloads: StateFlow<List<DownloadTask>> = downloadManager.activeDownloads

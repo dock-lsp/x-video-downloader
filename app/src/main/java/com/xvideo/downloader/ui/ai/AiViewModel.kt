@@ -18,7 +18,7 @@ class AiViewModel(application: Application) : AndroidViewModel(application) {
 
     private val aiApiService = AiApiService.getInstance()
     private val codeGenRepo = CodeGenerationRepository.getInstance(application)
-    private val database = App.getInstance().database
+    private val database = try { App.getInstance().database } catch (_: Exception) { com.xvideo.downloader.data.local.database.AppDatabase.getInstance(application) }
     private val conversationDao = database.aiConversationDao()
     private val messageDao = database.aiMessageDao()
     private val projectDao = database.generatedProjectDao()

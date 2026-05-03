@@ -163,4 +163,29 @@
     <string name="downloading_video_stream">Downloading video stream…</string>
     <string name="downloading_audio_stream">Downloading audio stream…</string>
     <string name="merging_ffmpeg">Merging audio + video (FFmpeg)…</string>
+
+    <!-- Speed limit -->
+    <string name="speed_limit">下载限速</string>
+
+    <!-- Batch download -->
+    <string name="batch_download">批量下载</string>
+    <string name="batch_download_hint">每行一个 Twitter/X 链接，支持同时下载多个视频</string>
+    <string name="batch_paste_from_clipboard">从剪贴板粘贴</string>
+    <string name="batch_start_download">开始下载</string>
+    <string name="batch_enter_urls">请输入至少一个链接</string>
+    <string name="batch_no_valid_urls">未找到有效的 Twitter/X 链接</string>
+    <string name="batch_skipped_invalid">已跳过 %1$d 个无效链接</string>
+    <string name="batch_progress">进度: %1$d/%2$d</string>
+    <string name="batch_done">完成: %1$d 成功, %2$d 失败</string>
+    <string name="batch_added">已添加到下载</string>
+    <string name="batch_added_count">已添加 %1$d 个下载任务</string>
+    <string name="batch_waiting">等待中…</string>
+    <string name="batch_parsing">正在解析…</string>
+    <string name="batch_no_video">未找到视频</string>
+
+    <!-- Audio extraction -->
+    <string name="extract_audio">提取音频</string>
+    <string name="extracting_audio">正在提取音频…</string>
+    <string name="audio_extracted">音频已提取</string>
+    <string name="audio_extract_failed">音频提取失败</string>
 </resources>

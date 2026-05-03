@@ -277,6 +277,14 @@ class HomeFragment : Fragment() {
                 loadCurrentSite()
             }
         }
+
+        // Batch download chip - navigate to batch fragment
+        binding.chipBatch.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, com.xvideo.downloader.ui.batch.BatchDownloadFragment())
+                .addToBackStack(null)
+                .commit()
+        }
     }
 
     private fun handleIntent(intent: Intent?) {

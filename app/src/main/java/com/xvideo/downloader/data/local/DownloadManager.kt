@@ -37,7 +37,7 @@ import kotlinx.coroutines.*
 class DownloadManager(private val context: Context) {
 
     private val okHttpClient: OkHttpClient
-        get() = App.getInstance().okHttpClient
+        get() = try { App.getInstance().okHttpClient } catch (_: Exception) { OkHttpClient() }
 
     private val _activeDownloads = MutableStateFlow<List<DownloadTask>>(emptyList())
     val activeDownloads: StateFlow<List<DownloadTask>> = _activeDownloads.asStateFlow()
@@ -54,7 +54,21 @@ class DownloadManager(private val context: Context) {
 
     companion object {
         private const val TAG = "DownloadManager"
+
+        // Speed limit settings (bytes per second, 0 = no limit)
+        const val SPEED_LIMIT_NONE = 0L
+        const val SPEED_LIMIT_1MB = 1_048_576L
+        const val SPEED_LIMIT_2MB = 2_097_152L
+        const val SPEED_LIMIT_5MB = 5_242_880L
     }
+
+    private var speedLimitBytesPerSecond: Long = SPEED_LIMIT_NONE
+
+    fun setSpeedLimit(bytesPerSecond: Long) {
+        speedLimitBytesPerSecond = bytesPerSecond
+    }
+
+    fun getSpeedLimit(): Long = speedLimitBytesPerSecond
 
     fun getDownloadDirectory(): File {
         val dir = if (Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED) {
@@ -446,12 +460,33 @@ class DownloadManager(private val context: Context) {
                     val buffer = ByteArray(8192)
                     var bytesRead: Int
                     var lastEmitTime = 0L
+                    var bytesThisSecond = 0L
+                    var secondStart = System.currentTimeMillis()
 
                     while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                         if (downloadJobs[task.id]?.isActive != true) {
                             outputStream.flush()
                             updateTaskState(task.id, DownloadTaskState.PAUSED)
                             return
+                        }
+
+                        // Speed limiting: throttle if over limit
+                        if (speedLimitBytesPerSecond > 0) {
+                            val now = System.currentTimeMillis()
+                            val elapsed = now - secondStart
+                            if (elapsed >= 1000) {
+                                bytesThisSecond = 0
+                                secondStart = now
+                            }
+                            bytesThisSecond += bytesRead
+                            if (bytesThisSecond > speedLimitBytesPerSecond && elapsed < 1000) {
+                                val sleepMs = 1000 - elapsed
+                                if (sleepMs > 0) {
+                                    kotlinx.coroutines.delay(sleepMs)
+                                }
+                                bytesThisSecond = 0
+                                secondStart = System.currentTimeMillis()
+                            }
                         }
 
                         outputStream.write(buffer, 0, bytesRead)
@@ -572,6 +607,70 @@ class DownloadManager(private val context: Context) {
     }
 
     fun getActiveDownloads(): List<DownloadTask> = _activeDownloads.value
+
+    // ==================== Audio Extraction ====================
+
+    /**
+     * Extract audio from a downloaded video file and save as MP3/M4A.
+     * Uses Android's built-in MediaExtractor + MediaMuxer.
+     */
+    suspend fun extractAudio(
+        videoPath: String,
+        outputFormat: String = "m4a", // m4a or mp3
+        onComplete: (String?) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        withContext(Dispatchers.IO) {
+            var extractor: MediaExtractor? = null
+            var muxer: MediaMuxer? = null
+            try {
+                val inputFile = File(videoPath)
+                if (!inputFile.exists()) {
+                    withContext(Dispatchers.Main) { onError("视频文件不存在") }
+                    return@withContext
+                }
+
+                val outputDir = getDownloadDirectory()
+                val baseName = inputFile.nameWithoutExtension
+                val outputFile = File(outputDir, "${baseName}_audio.$outputFormat")
+
+                extractor = MediaExtractor().apply { setDataSource(videoPath) }
+
+                // Find audio track
+                val audioTrackIndex = findTrack(extractor, "audio/")
+                if (audioTrackIndex < 0) {
+                    withContext(Dispatchers.Main) { onError("未找到音频轨道") }
+                    return@withContext
+                }
+
+                extractor.selectTrack(audioTrackIndex)
+                val audioFormat = extractor.getTrackFormat(audioTrackIndex)
+
+                val outputMime = if (outputFormat == "mp3") "audio/mpeg" else "audio/mp4"
+                muxer = MediaMuxer(outputFile.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+                val muxerTrack = muxer.addTrack(audioFormat)
+                muxer.start()
+
+                val buffer = ByteBuffer.allocate(1024 * 1024)
+                val bufferInfo = MediaCodec.BufferInfo()
+                writeSamples(extractor, muxer, muxerTrack, buffer, bufferInfo)
+
+                withContext(Dispatchers.Main) {
+                    onComplete(outputFile.absolutePath)
+                }
+
+                // Scan media store
+                com.xvideo.downloader.util.FileUtils.scanMediaStore(context, outputFile)
+
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { onError("提取音频失败: ${e.message}") }
+            } finally {
+                extractor?.release()
+                try { muxer?.stop() } catch (_: Exception) {}
+                muxer?.release()
+            }
+        }
+    }
 
     data class DownloadProgress(
         val taskId: String, val progress: Int = 0,

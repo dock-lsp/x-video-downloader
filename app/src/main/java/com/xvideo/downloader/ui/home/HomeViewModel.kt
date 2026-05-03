@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = VideoRepository()
-    private val downloadManager = App.getInstance().downloadManager
+    private val downloadManager = try { App.getInstance().downloadManager } catch (_: Exception) { com.xvideo.downloader.data.local.DownloadManager(application) }
     private val resources: Resources = application.resources
 
     private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
