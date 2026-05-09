@@ -7,6 +7,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,29 +27,44 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Generate release keystore
+      - name: Configure gradle.properties
         run: |
-          keytool -genkeypair \
-            -v \
-            -keystore app/release.keystore \
-            -alias release \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass qq900236 \
-            -keypass qq900236 \
-            -dname "CN=XVideoDownloader, OU=Dev, O=XVideo, L=Shanghai, ST=Shanghai, C=CN"
+          cat >> gradle.properties << EOF
+          
+          # Twitter API token from secrets
+          TWITTER_BEARER_TOKEN=${{ secrets.TWITTER_BEARER_TOKEN }}
+          EOF
+
+      - name: Generate release keystore
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_PASSWORD" ]; then
+            keytool -genkeypair \
+              -v \
+              -keystore app/release.keystore \
+              -alias release \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass "$KEYSTORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" \
+              -dname "CN=XVideoDownloader, OU=Dev, O=XVideo, L=Shanghai, ST=Shanghai, C=CN"
+          fi
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease
+        if: env.KEYSTORE_PASSWORD != ''
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Rename release APK
+        if: env.KEYSTORE_PASSWORD != ''
         run: |
           mv app/build/outputs/apk/release/app-release.apk \
              app/build/outputs/apk/release/x-video-downloader-v1.1.0-release.apk || true
@@ -59,6 +77,7 @@ jobs:
           retention-days: 90
 
       - name: Upload Release APK
+        if: env.KEYSTORE_PASSWORD != ''
         uses: actions/upload-artifact@v4
         with:
           name: x-video-downloader-release
