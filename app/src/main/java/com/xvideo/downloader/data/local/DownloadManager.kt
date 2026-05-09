@@ -9,6 +9,7 @@ import android.os.Environment
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -49,7 +50,7 @@ class DownloadManager(private val context: Context) {
     val downloadProgress: SharedFlow<DownloadProgress> = _downloadProgress.asSharedFlow()
 
     private val downloadJobs = ConcurrentHashMap<String, Job>()
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val scope = kotlinx.coroutines.CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val segmentSemaphore = Semaphore(4)
 
     private val database: AppDatabase by lazy { AppDatabase.getInstance(context) }
@@ -78,7 +79,7 @@ class DownloadManager(private val context: Context) {
     }
 
     fun shutdown() {
-        downloadJobs.values.forEach { it.cancel() }
+        downloadJobs.values.forEach { job -> job.cancel() }
         downloadJobs.clear()
         scope.cancel()
     }
@@ -239,10 +240,11 @@ class DownloadManager(private val context: Context) {
         val segmentCount = segments.size
         val segmentResults = ConcurrentHashMap<Int, ByteArray>()
 
-        val downloadJobs = segments.mapIndexed { index, segmentUrl ->
+        val downloadJobsList = segments.mapIndexed { index, segmentUrl ->
             scope.launch {
                 segmentSemaphore.withPermit {
-                    if (!this@DownloadManager.downloadJobs[taskId]?.isActive.orFalse()) {
+                    val isJobActive = downloadJobs[taskId]?.isActive == true
+                    if (!isJobActive) {
                         return@launch
                     }
 
@@ -266,16 +268,14 @@ class DownloadManager(private val context: Context) {
             }
         }
 
-        downloadJobs.forEach { it.join() }
+        downloadJobsList.forEach { it.join() }
 
         FileOutputStream(outputFile).use { outputStream ->
             for (i in 0 until segmentCount) {
-                segmentResults[i]?.let { outputStream.write(it) }
+                segmentResults[i]?.let { bytes -> outputStream.write(bytes) }
             }
         }
     }
-
-    private fun Boolean.orFalse(): Boolean = this == true
 
     private suspend fun mergeAudioVideo(
         videoPath: String, audioPath: String, outputPath: String

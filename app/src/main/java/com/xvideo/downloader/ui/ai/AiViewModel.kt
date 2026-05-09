@@ -196,14 +196,14 @@ class AiViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
 
-                val context = _messages.value.map { it.role to it.content }
+                val contextMessages = _messages.value.map { it.role to it.content }
                 _isLoading.value = true
 
-                val result = aiApiService.chat(context)
+                val result = aiApiService.chat(contextMessages)
                 result.fold(
                     onSuccess = { response ->
                         val codeResult = codeGenRepo?.parseAndCreateFiles(response, conversationId = convId)
-                            ?: CodeGenerationRepository.ParseResult(emptyList(), null, "")
+                            ?: CodeGenerationRepository.CodeGenResult(emptyList(), null, "CodeGenRepo not available")
                         val hasCode = codeResult.createdFiles.isNotEmpty()
 
                         val aiMessage = AiMessageEntity(
