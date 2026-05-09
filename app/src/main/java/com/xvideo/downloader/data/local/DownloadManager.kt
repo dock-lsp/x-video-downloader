@@ -18,6 +18,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -50,7 +53,7 @@ class DownloadManager(private val context: Context) {
     val downloadProgress: SharedFlow<DownloadProgress> = _downloadProgress.asSharedFlow()
 
     private val downloadJobs = ConcurrentHashMap<String, Job>()
-    private val scope = kotlinx.coroutines.CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val segmentSemaphore = Semaphore(4)
 
     private val database: AppDatabase by lazy { AppDatabase.getInstance(context) }
@@ -115,7 +118,7 @@ class DownloadManager(private val context: Context) {
             filePath = outputFile.absolutePath,
             state = 1
         )
-        downloadDao.insert(entity)
+        scope.launch { downloadDao.insert(entity) }
         _activeDownloads.value = _activeDownloads.value + task
 
         context.startForegroundService(
