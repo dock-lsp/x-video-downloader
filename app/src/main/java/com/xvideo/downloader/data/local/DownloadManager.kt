@@ -8,6 +8,7 @@ import android.media.MediaMuxer
 import android.os.Environment
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -15,6 +16,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -32,7 +36,6 @@ import com.xvideo.downloader.data.model.VideoVariant
 import com.xvideo.downloader.data.local.database.AppDatabase
 import com.xvideo.downloader.data.local.database.entity.DownloadHistoryEntity
 import com.xvideo.downloader.data.remote.api.TwitterApiService
-import kotlinx.coroutines.*
 
 class DownloadManager(private val context: Context) {
 
@@ -47,6 +50,7 @@ class DownloadManager(private val context: Context) {
 
     private val downloadJobs = ConcurrentHashMap<String, Job>()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val segmentSemaphore = Semaphore(4)
 
     private val database: AppDatabase by lazy { AppDatabase.getInstance(context) }
     private val downloadDao by lazy { database.downloadHistoryDao() }
@@ -54,6 +58,7 @@ class DownloadManager(private val context: Context) {
 
     companion object {
         private const val TAG = "DownloadManager"
+        private const val BUFFER_SIZE = 4 * 1024 * 1024
     }
 
     fun getDownloadDirectory(): File {
@@ -72,7 +77,13 @@ class DownloadManager(private val context: Context) {
         return dir
     }
 
-    suspend fun startDownload(
+    fun shutdown() {
+        downloadJobs.values.forEach { it.cancel() }
+        downloadJobs.clear()
+        scope.cancel()
+    }
+
+    fun startDownload(
         videoInfo: VideoInfo,
         variant: VideoVariant,
         taskId: String = UUID.randomUUID().toString()
@@ -106,7 +117,6 @@ class DownloadManager(private val context: Context) {
         downloadDao.insert(entity)
         _activeDownloads.value = _activeDownloads.value + task
 
-        // Start foreground service for download
         context.startForegroundService(
             Intent(context, com.xvideo.downloader.service.DownloadService::class.java).apply {
                 action = com.xvideo.downloader.service.DownloadService.ACTION_START
@@ -124,16 +134,6 @@ class DownloadManager(private val context: Context) {
         return taskId
     }
 
-    /**
-     * Download m3u8 HLS stream.
-     *
-     * Flow:
-     * 1. Parse m3u8 master playlist → get best quality video + audio stream URLs
-     * 2. Download video stream segments → temp video file
-     * 3. Download audio stream segments → temp audio file (if separate)
-     * 4. Merge audio + video using Android MediaMuxer → final MP4
-     * 5. Clean up temp files
-     */
     private suspend fun downloadM3u8Stream(task: DownloadTask, outputFile: File, videoInfo: VideoInfo) {
         val tempDir = File(getTempDirectory(), task.id)
         try {
@@ -143,7 +143,6 @@ class DownloadManager(private val context: Context) {
             val m3u8Url = videoInfo.m3u8Url ?: task.url
             Log.d(TAG, "Starting m3u8 download: $m3u8Url")
 
-            // Step 1: Parse m3u8
             emitProgress(task.id, 5, 0, 0, statusText = "正在解析 M3U8 播放列表...")
 
             val streamsResult = apiService.parseM3u8Playlist(m3u8Url)
@@ -155,22 +154,20 @@ class DownloadManager(private val context: Context) {
             val bestStream = streams.first()
             Log.d(TAG, "Selected stream: ${bestStream.quality} (${bestStream.resolution})")
 
-            // Step 2: Download video stream
             emitProgress(task.id, 10, 0, 0, statusText = "正在下载视频流...")
 
             val videoTempFile = File(tempDir, "video.ts")
-            downloadHlsStream(bestStream.videoUrl, videoTempFile, task.id, 10, 55)
+            downloadHlsStreamParallel(bestStream.videoUrl, videoTempFile, task.id, 10, 55)
 
             if (downloadJobs[task.id]?.isActive != true) {
                 updateTaskState(task.id, DownloadTaskState.PAUSED)
                 return
             }
 
-            // Step 3: Download audio stream (if separate)
             val audioTempFile = if (bestStream.audioUrl != null) {
                 emitProgress(task.id, 60, 0, 0, statusText = "正在下载音频流...")
                 val audioFile = File(tempDir, "audio.ts")
-                downloadHlsStream(bestStream.audioUrl, audioFile, task.id, 60, 80)
+                downloadHlsStreamParallel(bestStream.audioUrl, audioFile, task.id, 60, 80)
 
                 if (downloadJobs[task.id]?.isActive != true) {
                     updateTaskState(task.id, DownloadTaskState.PAUSED)
@@ -179,7 +176,6 @@ class DownloadManager(private val context: Context) {
                 audioFile
             } else null
 
-            // Step 4: Merge with MediaMuxer
             emitProgress(task.id, 85, 0, 0, statusText = "正在合并音视频...")
 
             val success = if (audioTempFile != null && audioTempFile.exists() && audioTempFile.length() > 0) {
@@ -189,12 +185,10 @@ class DownloadManager(private val context: Context) {
             }
 
             if (!success) {
-                // Fallback: just copy the TS file as-is (ExoPlayer can still play it)
                 Log.w(TAG, "MediaMuxer merge failed, copying raw file")
                 videoTempFile.copyTo(outputFile, overwrite = true)
             }
 
-            // Step 5: Complete
             completeDownload(task, outputFile)
 
         } catch (e: Exception) {
@@ -207,10 +201,7 @@ class DownloadManager(private val context: Context) {
         }
     }
 
-    /**
-     * Download HLS stream (m3u8 playlist with TS segments) to a single file.
-     */
-    private suspend fun downloadHlsStream(
+    private suspend fun downloadHlsStreamParallel(
         streamUrl: String, outputFile: File, taskId: String,
         progressStart: Int, progressEnd: Int
     ) {
@@ -224,14 +215,13 @@ class DownloadManager(private val context: Context) {
         val body = response.body?.string() ?: throw Exception("流响应为空")
         val basePrefix = streamUrl.substringBeforeLast("/")
 
-        // If this is a master playlist, pick the best quality sub-stream
         if (body.contains("#EXT-X-STREAM-INF")) {
             val lines = body.lines()
             for (i in lines.indices) {
                 if (lines[i].trim().startsWith("#EXT-X-STREAM-INF")) {
                     if (i + 1 < lines.size) {
                         val subUrl = resolveUrl(lines[i + 1].trim(), basePrefix)
-                        downloadHlsStream(subUrl, outputFile, taskId, progressStart, progressEnd)
+                        downloadHlsStreamParallel(subUrl, outputFile, taskId, progressStart, progressEnd)
                         return
                     }
                 }
@@ -239,7 +229,6 @@ class DownloadManager(private val context: Context) {
             throw Exception("主播放列表中未找到流")
         }
 
-        // Media playlist - download segments
         val segments = body.lines()
             .map { it.trim() }
             .filter { it.isNotEmpty() && !it.startsWith("#") }
@@ -247,30 +236,47 @@ class DownloadManager(private val context: Context) {
 
         if (segments.isEmpty()) throw Exception("播放列表中未找到分片")
 
-        FileOutputStream(outputFile).use { outputStream ->
-            for ((index, segmentUrl) in segments.withIndex()) {
-                if (downloadJobs[taskId]?.isActive != true) return
+        val segmentCount = segments.size
+        val segmentResults = ConcurrentHashMap<Int, ByteArray>()
 
-                val segRequest = Request.Builder().url(segmentUrl)
-                    .addHeader("User-Agent", "Mozilla/5.0").build()
+        val downloadJobs = segments.mapIndexed { index, segmentUrl ->
+            scope.launch {
+                segmentSemaphore.withPermit {
+                    if (!this@DownloadManager.downloadJobs[taskId]?.isActive.orFalse()) {
+                        return@launch
+                    }
 
-                val segResponse = okHttpClient.newCall(segRequest).execute()
-                if (segResponse.isSuccessful) {
-                    segResponse.body?.byteStream()?.use { input ->
-                        input.copyTo(outputStream)
+                    try {
+                        val segRequest = Request.Builder().url(segmentUrl)
+                            .addHeader("User-Agent", "Mozilla/5.0").build()
+
+                        val segResponse = okHttpClient.newCall(segRequest).execute()
+                        if (segResponse.isSuccessful) {
+                            val bytes = segResponse.body?.bytes()
+                            if (bytes != null) {
+                                segmentResults[index] = bytes
+                                val progress = progressStart + ((index + 1) * (progressEnd - progressStart) / segmentCount)
+                                emitProgress(taskId, progress, 0, 0, statusText = "下载中... ${index + 1}/$segmentCount")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to download segment $index: ${e.message}")
                     }
                 }
+            }
+        }
 
-                val progress = progressStart + ((index + 1) * (progressEnd - progressStart) / segments.size)
-                emitProgress(taskId, progress, 0, 0, statusText = "下载中... ${index + 1}/${segments.size}")
+        downloadJobs.forEach { it.join() }
+
+        FileOutputStream(outputFile).use { outputStream ->
+            for (i in 0 until segmentCount) {
+                segmentResults[i]?.let { outputStream.write(it) }
             }
         }
     }
 
-    /**
-     * Merge separate audio and video TS files into MP4 using Android MediaMuxer.
-     * No FFmpeg dependency needed - uses built-in Android APIs.
-     */
+    private fun Boolean.orFalse(): Boolean = this == true
+
     private suspend fun mergeAudioVideo(
         videoPath: String, audioPath: String, outputPath: String
     ): Boolean = withContext(Dispatchers.IO) {
@@ -282,7 +288,6 @@ class DownloadManager(private val context: Context) {
             videoExtractor = MediaExtractor().apply { setDataSource(videoPath) }
             audioExtractor = MediaExtractor().apply { setDataSource(audioPath) }
 
-            // Find video and audio tracks
             val videoTrackIndex = findTrack(videoExtractor, "video/")
             val audioTrackIndex = findTrack(audioExtractor, "audio/")
 
@@ -306,14 +311,13 @@ class DownloadManager(private val context: Context) {
 
             muxer.start()
 
-            // Write video samples
-            val buffer = ByteBuffer.allocate(1024 * 1024) // 1MB buffer
+            val buffer = ByteBuffer.allocateDirect(BUFFER_SIZE)
             val bufferInfo = MediaCodec.BufferInfo()
 
             writeSamples(videoExtractor, muxer, muxerVideoTrack, buffer, bufferInfo)
 
-            // Write audio samples
             if (muxerAudioTrack >= 0) {
+                buffer.clear()
                 writeSamples(audioExtractor, muxer, muxerAudioTrack, buffer, bufferInfo)
             }
 
@@ -325,14 +329,11 @@ class DownloadManager(private val context: Context) {
         } finally {
             videoExtractor?.release()
             audioExtractor?.release()
-            try { muxer?.stop() } catch (_: Exception) {}
+            try { muxer?.stop() } catch (e: Exception) { Log.w(TAG, "Muxer stop failed", e) }
             muxer?.release()
         }
     }
 
-    /**
-     * Remux a single TS file to MP4 using MediaMuxer.
-     */
     private suspend fun remuxToMp4(inputPath: String, outputPath: String): Boolean = withContext(Dispatchers.IO) {
         var extractor: MediaExtractor? = null
         var muxer: MediaMuxer? = null
@@ -354,7 +355,7 @@ class DownloadManager(private val context: Context) {
 
             muxer.start()
 
-            val buffer = ByteBuffer.allocate(1024 * 1024)
+            val buffer = ByteBuffer.allocateDirect(BUFFER_SIZE)
             val bufferInfo = MediaCodec.BufferInfo()
 
             for (i in 0 until trackCount) {
@@ -370,7 +371,7 @@ class DownloadManager(private val context: Context) {
             false
         } finally {
             extractor?.release()
-            try { muxer?.stop() } catch (_: Exception) {}
+            try { muxer?.stop() } catch (e: Exception) { Log.w(TAG, "Muxer stop failed", e) }
             muxer?.release()
         }
     }
@@ -407,13 +408,10 @@ class DownloadManager(private val context: Context) {
         else "$basePrefix/$url"
     }
 
-    // ==================== Direct Download (MP4) ====================
-
     private suspend fun downloadDirectFile(task: DownloadTask, outputFile: File) {
         try {
             updateTaskState(task.id, DownloadTaskState.DOWNLOADING)
 
-            // Support HTTP Range for resume: check existing file size
             val existingBytes = if (outputFile.exists()) outputFile.length() else 0L
             val requestBuilder = Request.Builder().url(task.url)
                 .addHeader("User-Agent", "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36")
@@ -429,7 +427,6 @@ class DownloadManager(private val context: Context) {
 
             val body = response.body ?: throw Exception("响应体为空")
             val contentLength = body.contentLength()
-            // For resumed downloads (206), total = existing + remaining
             val totalBytes = if (response.code == 206 && contentLength > 0) {
                 existingBytes + contentLength
             } else {
@@ -437,7 +434,6 @@ class DownloadManager(private val context: Context) {
             }
             task.totalBytes = totalBytes
 
-            // Append to existing file for resume, otherwise create new
             val appendMode = response.code == 206 && existingBytes > 0
             var totalBytesRead = existingBytes
 
@@ -475,6 +471,7 @@ class DownloadManager(private val context: Context) {
             completeDownload(task, outputFile)
 
         } catch (e: Exception) {
+            Log.e(TAG, "Direct download failed", e)
             task.state = DownloadTaskState.FAILED
             updateTaskState(task.id, DownloadTaskState.FAILED)
             emitProgress(task.id, 0, error = e.message ?: "下载失败")
@@ -492,38 +489,31 @@ class DownloadManager(private val context: Context) {
         emitProgress(task.id, 100, outputFile.length(), outputFile.length(),
             isCompleted = true, filePath = outputFile.absolutePath)
 
-        // Scan media store so it shows up in gallery
         com.xvideo.downloader.util.FileUtils.scanMediaStore(context, outputFile)
-
-        // Stop service if no more active downloads
         stopServiceIfIdle()
     }
-
-    // ==================== Controls ====================
 
     fun pauseDownload(taskId: String) {
         downloadJobs[taskId]?.cancel()
         downloadJobs.remove(taskId)
         updateTaskState(taskId, DownloadTaskState.PAUSED)
+        Log.d(TAG, "Download paused: $taskId")
     }
 
     fun resumeDownload(taskId: String) {
         val task = _activeDownloads.value.find { it.id == taskId } ?: return
         val file = File(task.outputPath)
 
-        scope.launch {
-            val job = scope.launch {
-                if (task.url.contains(".m3u8") || task.videoInfo.hasM3u8Stream()) {
-                    // M3U8 downloads restart from scratch (segment-based, no HTTP Range)
-                    if (file.exists()) file.delete()
-                    downloadM3u8Stream(task, file, task.videoInfo)
-                } else {
-                    // Direct file: keep existing data for HTTP Range resume
-                    downloadDirectFile(task, file)
-                }
+        val job = scope.launch {
+            if (task.url.contains(".m3u8") || task.videoInfo.hasM3u8Stream()) {
+                if (file.exists()) file.delete()
+                downloadM3u8Stream(task, file, task.videoInfo)
+            } else {
+                downloadDirectFile(task, file)
             }
-            downloadJobs[taskId] = job
         }
+        downloadJobs[taskId] = job
+        Log.d(TAG, "Download resumed: $taskId")
     }
 
     fun cancelDownload(taskId: String) {
@@ -534,9 +524,8 @@ class DownloadManager(private val context: Context) {
         _activeDownloads.value = _activeDownloads.value.filter { it.id != taskId }
         File(getTempDirectory(), taskId).deleteRecursively()
         scope.launch { downloadDao.deleteById(taskId) }
-
-        // Stop service if no more active downloads
         stopServiceIfIdle()
+        Log.d(TAG, "Download cancelled: $taskId")
     }
 
     fun deleteDownload(taskId: String) {

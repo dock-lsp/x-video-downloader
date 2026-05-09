@@ -144,14 +144,16 @@ class HomeFragment : Fragment() {
             useWideViewPort = true
             loadWithOverviewMode = true
             builtInZoomControls = true
-            displayZoomControls = true
+            displayZoomControls = false
             setSupportZoom(true)
             setGeolocationEnabled(false)
             databaseEnabled = true
             cacheMode = WebSettings.LOAD_DEFAULT
+            setNeedInitialFocus(false)
+            blockNetworkImage = false
+            loadWithOverviewMode = true
         }
 
-        // Enable hardware acceleration for WebView
         binding.webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
         binding.webView.webViewClient = object : WebViewClient() {

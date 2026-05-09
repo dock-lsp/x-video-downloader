@@ -22,63 +22,69 @@ class App : Application() {
     var downloadManager: DownloadManager? = null
         private set
 
-    var okHttpClient: OkHttpClient = OkHttpClient()
+    var okHttpClient: OkHttpClient = createDefaultOkHttpClient()
         private set
 
     var isInitialized = false
         private set
 
+    private fun createDefaultOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .followRedirects(true)
+            .connectionPool(ConnectionPool(8, 10, TimeUnit.MINUTES))
+            .retryOnConnectionFailure(true)
+            .build()
+    }
+
     override fun onCreate() {
         super.onCreate()
 
-        // Global crash handler — writes crash to file for debugging
-        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        instance = this
+
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
                 val sw = StringWriter()
                 throwable.printStackTrace(PrintWriter(sw))
-                Log.e(TAG, "Uncaught exception: $sw")
+                Log.e(TAG, "Uncaught exception on thread ${thread.name}: $sw")
                 val crashFile = File(getExternalFilesDir(null), "crash_log.txt")
                 crashFile.writeText("Crash on thread ${thread.name}:\n$sw\n")
-            } catch (_: Exception) {}
-            defaultHandler?.uncaughtException(thread, throwable)
+                Log.e(TAG, "Crash logged to: ${crashFile.absolutePath}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to log crash", e)
+            }
+            Thread.getDefaultUncaughtExceptionHandler()?.uncaughtException(thread, throwable)
         }
 
-        instance = this
-
-        // Initialize OkHttpClient first (least likely to fail)
         try {
-            okHttpClient = OkHttpClient.Builder()
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
-                .followRedirects(true)
-                .connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
-                .build()
+            okHttpClient = createDefaultOkHttpClient()
+            Log.d(TAG, "OkHttpClient initialized with optimized settings")
         } catch (e: Exception) {
-            Log.e(TAG, "OkHttpClient custom config failed, using defaults", e)
+            Log.e(TAG, "Failed to configure OkHttpClient, using defaults", e)
             okHttpClient = OkHttpClient()
         }
 
-        // Initialize database
         try {
             database = AppDatabase.getInstance(this)
+            Log.d(TAG, "Database initialized successfully")
         } catch (e: Exception) {
-            Log.e(TAG, "Database init failed", e)
+            Log.e(TAG, "Failed to initialize database", e)
         }
 
-        // Initialize download manager (depends on database)
         try {
             downloadManager = DownloadManager(this)
+            Log.d(TAG, "DownloadManager initialized successfully")
         } catch (e: Exception) {
-            Log.e(TAG, "DownloadManager init failed", e)
+            Log.e(TAG, "Failed to initialize DownloadManager", e)
         }
 
-        // Create notification channels
         try {
             createNotificationChannels()
+            Log.d(TAG, "Notification channels created")
         } catch (e: Exception) {
-            Log.e(TAG, "Notification channels failed", e)
+            Log.e(TAG, "Failed to create notification channels", e)
         }
 
         isInitialized = true
@@ -95,6 +101,7 @@ class App : Application() {
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Download progress notifications"
+                setShowBadge(false)
             }
             notificationManager.createNotificationChannel(downloadChannel)
 
@@ -104,6 +111,7 @@ class App : Application() {
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Active download notifications"
+                setShowBadge(true)
             }
             notificationManager.createNotificationChannel(serviceChannel)
         }
@@ -118,7 +126,11 @@ class App : Application() {
         private var instance: App? = null
 
         fun getInstance(): App {
-            return instance ?: throw IllegalStateException("App not initialized")
+            return instance ?: throw IllegalStateException("App not initialized, call create() first")
+        }
+
+        fun isInitialized(): Boolean {
+            return instance?.isInitialized == true
         }
     }
 }

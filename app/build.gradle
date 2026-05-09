@@ -5,6 +5,8 @@ plugins {
     id 'com.google.devtools.ksp'
 }
 
+def twitterToken = project.findProperty('TWITTER_BEARER_TOKEN') ?: System.getenv('TWITTER_BEARER_TOKEN') ?: ''
+
 android {
     namespace 'com.xvideo.downloader'
     compileSdk 34
@@ -14,21 +16,21 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0.0"
-        buildConfigField "String", "TWITTER_BEARER_TOKEN", "\"AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA\""
+        buildConfigField "String", "TWITTER_BEARER_TOKEN", "\"${twitterToken}\""
     }
-    
+
     signingConfigs {
         release {
             def keystoreFile = file('release.keystore')
             if (keystoreFile.exists()) {
                 storeFile keystoreFile
-                storePassword 'qq900236'
-                keyAlias 'release'
-                keyPassword 'qq900236'
+                storePassword project.findProperty('KEYSTORE_PASSWORD') ?: System.getenv('KEYSTORE_PASSWORD') ?: ''
+                keyAlias project.findProperty('KEY_ALIAS') ?: System.getenv('KEY_ALIAS') ?: 'release'
+                keyPassword project.findProperty('KEY_PASSWORD') ?: System.getenv('KEY_PASSWORD') ?: ''
             }
         }
     }
-    
+
     buildTypes {
         debug {
             debuggable true
@@ -37,7 +39,9 @@ android {
             if (file('release.keystore').exists()) {
                 signingConfig signingConfigs.release
             }
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     compileOptions {
@@ -58,28 +62,50 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.12.0'
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.11.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.activity:activity-ktx:1.8.2'
-    implementation 'androidx.fragment:fragment-ktx:1.6.2'
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.7.7'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.7.7'
-    implementation 'androidx.room:room-runtime:2.6.1'
-    implementation 'androidx.room:room-ktx:2.6.1'
-    ksp 'androidx.room:room-compiler:2.6.1'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'com.google.code.gson:gson:2.10.1'
-    implementation 'androidx.media3:media3-exoplayer:1.2.1'
-    implementation 'androidx.media3:media3-ui:1.2.1'
-    implementation 'io.coil-kt:coil:2.5.0'
-    implementation 'io.coil-kt:coil-video:2.5.0'
-    implementation 'androidx.recyclerview:recyclerview:1.3.2'
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-    implementation 'androidx.coordinatorlayout:coordinatorlayout:1.2.0'
+    def versions = [
+        coreKtx: '1.12.0',
+        appcompat: '1.6.1',
+        material: '1.11.0',
+        constraintlayout: '2.1.4',
+        activityKtx: '1.8.2',
+        fragmentKtx: '1.6.2',
+        lifecycleViewmodel: '2.7.0',
+        lifecycleRuntime: '2.7.0',
+        navigationFragment: '2.7.7',
+        navigationUi: '2.7.7',
+        room: '2.6.1',
+        coroutines: '1.7.3',
+        okhttp: '4.12.0',
+        gson: '2.10.1',
+        media3: '1.2.1',
+        coil: '2.5.0',
+        recyclerview: '1.3.2',
+        swiperefreshlayout: '1.1.0',
+        coordinatorlayout: '1.2.0'
+    ]
+
+    implementation "androidx.core:core-ktx:${versions.coreKtx}"
+    implementation "androidx.appcompat:appcompat:${versions.appcompat}"
+    implementation "com.google.android.material:material:${versions.material}"
+    implementation "androidx.constraintlayout:constraintlayout:${versions.constraintlayout}"
+    implementation "androidx.activity:activity-ktx:${versions.activityKtx}"
+    implementation "androidx.fragment:fragment-ktx:${versions.fragmentKtx}"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:${versions.lifecycleViewmodel}"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:${versions.lifecycleRuntime}"
+    implementation "androidx.navigation:navigation-fragment-ktx:${versions.navigationFragment}"
+    implementation "androidx.navigation:navigation-ui-ktx:${versions.navigationUi}"
+    implementation "androidx.room:room-runtime:${versions.room}"
+    implementation "androidx.room:room-ktx:${versions.room}"
+    ksp "androidx.room:room-compiler:${versions.room}"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:${versions.coroutines}"
+    implementation "com.squareup.okhttp3:okhttp:${versions.okhttp}"
+    implementation "com.google.code.gson:gson:${versions.gson}"
+    implementation "androidx.media3:media3-exoplayer:${versions.media3}"
+    implementation "androidx.media3:media3-ui:${versions.media3}"
+    implementation "io.coil-kt:coil:${versions.coil}"
+    implementation "io.coil-kt:coil-video:${versions.coil}"
+    implementation "androidx.recyclerview:recyclerview:${versions.recyclerview}"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:${versions.swiperefreshlayout}"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:${versions.coordinatorlayout}"
     implementation 'org.json:json:20231013'
 }
