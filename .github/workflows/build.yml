@@ -23,9 +23,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-home-cache-location: ${{ runner.temp }}/gradle-home
-          gradle-configuration-cache: true
 
       - name: Generate release keystore
         run: |
@@ -44,19 +41,23 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace 2>&1 | tail -100
+        run: ./gradlew assembleDebug
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease --stacktrace 2>&1 | tail -50
+        run: ./gradlew assembleRelease
 
       - name: Rename APKs
         run: |
-          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/x-video-downloader-v2.0.4-debug.apk || true
-          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/x-video-downloader-v2.0.4-release.apk || true
+          if [ -f app/build/outputs/apk/debug/app-debug.apk ]; then
+            mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/x-video-downloader-v2.0.4-debug.apk
+          fi
+          if [ -f app/build/outputs/apk/release/app-release.apk ]; then
+            mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/x-video-downloader-v2.0.4-release.apk
+          fi
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
-        if: always()
+        if: success()
         with:
           name: x-video-downloader-debug
           path: app/build/outputs/apk/debug/*.apk
@@ -64,7 +65,7 @@ jobs:
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
-        if: always()
+        if: success()
         with:
           name: x-video-downloader-release
           path: app/build/outputs/apk/release/*.apk
