@@ -190,16 +190,18 @@ class OnlinePlayerFragment : Fragment() {
                 authorName = "Online Video",
                 authorUsername = "online",
                 tweetText = "",
-                thumbnailUrl = "",
-                videoUrl = url,
-                hasVideo = true
+                thumbnailUrl = null,
+                videoVariants = listOf(
+                    com.xvideo.downloader.data.model.VideoVariant(
+                        url = url,
+                        bitrate = 0,
+                        contentType = "video/mp4"
+                    )
+                ),
+                gifVariants = emptyList()
             )
 
-            val variant = com.xvideo.downloader.data.model.VideoVariant(
-                url = url,
-                quality = "Original",
-                bitrate = 0
-            )
+            val variant = videoInfo.videoVariants.first()
 
             App.downloadManager.startDownload(videoInfo, variant)
             showSnackbar(getString(R.string.downloading_video))
