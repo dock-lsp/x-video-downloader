@@ -18,7 +18,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
-import com.xvideo.downloader.App
 import com.xvideo.downloader.R
 import com.xvideo.downloader.data.model.VideoFormat
 import com.xvideo.downloader.databinding.FragmentOnlinePlayerBinding
@@ -184,6 +183,9 @@ class OnlinePlayerFragment : Fragment() {
 
     private fun startQuickDownload(url: String) {
         try {
+            val app = com.xvideo.downloader.App.getInstance()
+            val downloadManager = app.downloadManager
+
             val videoInfo = com.xvideo.downloader.data.model.VideoInfo(
                 tweetId = "",
                 tweetUrl = url,
@@ -203,7 +205,7 @@ class OnlinePlayerFragment : Fragment() {
 
             val variant = videoInfo.videoVariants.first()
 
-            App.downloadManager.startDownload(videoInfo, variant)
+            downloadManager.startDownload(videoInfo, variant)
             showSnackbar(getString(R.string.downloading_video))
         } catch (e: Exception) {
             showSnackbar("Download error: ${e.message}")
