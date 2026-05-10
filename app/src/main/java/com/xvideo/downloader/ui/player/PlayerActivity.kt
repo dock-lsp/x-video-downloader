@@ -155,6 +155,9 @@ class PlayerActivity : AppCompatActivity() {
             }
 
             override fun onDoubleTap(e: MotionEvent): Boolean {
+                if (isLocked) {
+                    return true
+                }
                 player?.let {
                     val screenWidth = binding.playerView.width
                     if (e.x < screenWidth / 2) {
@@ -170,7 +173,15 @@ class PlayerActivity : AppCompatActivity() {
         })
 
         binding.playerView.setOnTouchListener { _, event ->
+            if (isLocked && event.action != MotionEvent.ACTION_DOWN) {
+                return@setOnTouchListener true
+            }
+            
             gestureDetector?.onTouchEvent(event)
+
+            if (isLocked) {
+                return@setOnTouchListener true
+            }
 
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
