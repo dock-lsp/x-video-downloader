@@ -186,7 +186,10 @@ class OnlinePlayerFragment : Fragment() {
         )
 
         val variant = videoInfo.getBestQualityVideo() ?: videoInfo.videoVariants.first()
-        downloadManager.startDownload(videoInfo, variant)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            downloadManager.startDownload(videoInfo, variant)
+        }
 
         showSnackbar(getString(R.string.download_started))
 
