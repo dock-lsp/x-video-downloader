@@ -109,13 +109,22 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
-        // Lock button (right side)
         binding.btnLock.setOnClickListener {
             viewModel.toggleLock()
         }
 
         binding.btnUnlock.setOnClickListener {
             viewModel.unlock()
+        }
+
+        binding.btnLock.setOnTouchListener { _, _ ->
+            viewModel.toggleLock()
+            true
+        }
+
+        binding.btnUnlock.setOnTouchListener { _, _ ->
+            viewModel.unlock()
+            true
         }
 
         // Speed control
