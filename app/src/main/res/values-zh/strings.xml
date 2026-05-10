@@ -168,4 +168,5 @@
     <string name="clear_history_message">确定要清除所有播放历史吗？</string>
     <string name="detecting_video">正在检测视频…</string>
     <string name="download_started">下载已开始</string>
+    <string name="online_video">在线视频</string>
 </resources>

@@ -18,13 +18,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.xvideo.downloader.R
 import com.xvideo.downloader.data.local.DownloadManager
-import com.xvideo.downloader.data.model.DownloadTask
 import com.xvideo.downloader.databinding.FragmentOnlinePlayerBinding
 import com.xvideo.downloader.ui.player.PlayerActivity
-import com.xvideo.downloader.util.FileUtils
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
-import java.io.File
 
 class OnlinePlayerFragment : Fragment() {
 
@@ -169,26 +164,30 @@ class OnlinePlayerFragment : Fragment() {
 
         viewModel.addToHistory(url)
 
-        val fileName = "online_${System.currentTimeMillis()}.mp4"
-        val outputDir = FileUtils.getVideoDirectory(requireContext())
-        val outputFile = File(outputDir, fileName)
-
-        val task = DownloadTask(
-            id = System.currentTimeMillis(),
-            url = url,
-            fileName = fileName,
-            filePath = outputFile.absolutePath,
-            totalBytes = 0,
-            downloadedBytes = 0,
-            status = com.xvideo.downloader.data.model.DownloadStatus.DOWNLOADING,
-            createdAt = System.currentTimeMillis()
+        val videoInfo = com.xvideo.downloader.data.model.VideoInfo(
+            tweetId = System.currentTimeMillis().toString(),
+            tweetUrl = url,
+            authorName = getString(R.string.online_video),
+            authorUsername = "online",
+            tweetText = "",
+            thumbnailUrl = null,
+            videoVariants = listOf(
+                com.xvideo.downloader.data.model.VideoVariant(
+                    url = url,
+                    bitrate = 2000000,
+                    contentType = "video/mp4"
+                )
+            ),
+            gifVariants = emptyList(),
+            m3u8Url = null,
+            hasM3u8 = false
         )
 
-        downloadManager.startDownload(task)
+        val variant = videoInfo.getBestQualityVideo() ?: videoInfo.videoVariants.first()
+        downloadManager.startDownload(videoInfo, variant)
 
         showSnackbar(getString(R.string.download_started))
 
-        // Reset UI after short delay
         binding.root.postDelayed({
             binding.progressDownload.isVisible = false
         }, 1000)

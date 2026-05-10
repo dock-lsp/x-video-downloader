@@ -140,6 +140,7 @@
     <string name="clear_history_message">Are you sure you want to clear all playback history?</string>
     <string name="detecting_video">Detecting video…</string>
     <string name="download_started">Download started</string>
+    <string name="online_video">Online Video</string>
 
     <!-- Messages -->
     <string name="please_enter_url">Please enter a URL</string>
