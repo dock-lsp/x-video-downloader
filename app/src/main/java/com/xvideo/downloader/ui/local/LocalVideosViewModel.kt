@@ -53,6 +53,8 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
         val videos = mutableListOf<LocalVideo>()
         val context = getApplication<Application>()
 
+        val supportedExtensions = listOf("mp4", "mkv", "webm", "avi", "mov", "3gp", "flv", "m4v")
+
         val projection = arrayOf(
             MediaStore.Video.Media._ID,
             MediaStore.Video.Media.DISPLAY_NAME,
@@ -87,6 +89,11 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
                 val id = cursor.getLong(idColumn)
                 val name = cursor.getString(nameColumn)
                 val path = cursor.getString(pathColumn)
+
+                if (name.endsWith(".ts", ignoreCase = true)) {
+                    continue
+                }
+
                 val size = cursor.getLong(sizeColumn)
                 val duration = cursor.getLong(durationColumn)
                 val dateAdded = cursor.getLong(dateColumn)
@@ -114,19 +121,18 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
             }
         }
 
-        // Also scan app-specific directory
-        scanAppDirectory(videos)
+        scanAppDirectory(videos, supportedExtensions)
 
         return videos
     }
 
-    private fun scanAppDirectory(videos: MutableList<LocalVideo>) {
+    private fun scanAppDirectory(videos: MutableList<LocalVideo>, supportedExtensions: List<String>) {
         val context = getApplication<Application>()
         val downloadDir = com.xvideo.downloader.util.FileUtils.getVideoDirectory(context)
 
-        val supportedExtensions = setOf("mp4", "mkv", "webm", "avi", "mov", "3gp", "flv", "m4v")
-        
-        downloadDir.listFiles()?.filter { it.isFile && it.extension.lowercase() in supportedExtensions }?.forEach { file ->
+        downloadDir.listFiles()?.filter { file ->
+            file.isFile && file.extension.lowercase() in supportedExtensions && file.extension.lowercase() != "ts"
+        }?.forEach { file ->
             if (videos.none { it.path == file.absolutePath }) {
                 videos.add(
                     LocalVideo(
