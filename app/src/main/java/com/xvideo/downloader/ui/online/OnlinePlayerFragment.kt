@@ -16,8 +16,11 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.xvideo.downloader.App
 import com.xvideo.downloader.R
 import com.xvideo.downloader.data.local.DownloadManager
+import com.xvideo.downloader.data.model.VideoInfo
+import com.xvideo.downloader.data.model.VideoVariant
 import com.xvideo.downloader.databinding.FragmentOnlinePlayerBinding
 import com.xvideo.downloader.ui.player.PlayerActivity
 import kotlinx.coroutines.flow.collectLatest
@@ -30,7 +33,7 @@ class OnlinePlayerFragment : Fragment() {
 
     private val viewModel: OnlinePlayerViewModel by viewModels()
     private lateinit var recentAdapter: RecentUrlAdapter
-    private lateinit var downloadManager: DownloadManager
+    private val downloadManager: DownloadManager by lazy { App.downloadManager }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -43,7 +46,6 @@ class OnlinePlayerFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        downloadManager = DownloadManager.getInstance(requireContext())
         setupUI()
         observeState()
     }
@@ -70,21 +72,6 @@ class OnlinePlayerFragment : Fragment() {
             }
         }
 
-        // Download button
-        binding.btnDownload.setOnClickListener {
-            val url = binding.etUrl.text.toString().trim()
-            if (url.isNotEmpty()) {
-                startDownload(url)
-            } else {
-                showSnackbar(getString(R.string.please_enter_url))
-            }
-        }
-
-        // URL text change listener - show download button when URL is entered
-        binding.etUrl.setOnFocusChangeListener { _, hasFocus ->
-            updateDownloadButtonVisibility()
-        }
-
         // Clear history button
         binding.btnClearHistory.setOnClickListener {
             MaterialAlertDialogBuilder(requireContext())
@@ -101,7 +88,6 @@ class OnlinePlayerFragment : Fragment() {
         recentAdapter = RecentUrlAdapter(
             onClick = { url ->
                 binding.etUrl.setText(url.url)
-                updateDownloadButtonVisibility()
                 playVideo(url.url)
             },
             onDelete = { url ->
@@ -115,11 +101,6 @@ class OnlinePlayerFragment : Fragment() {
         }
     }
 
-    private fun updateDownloadButtonVisibility() {
-        val url = binding.etUrl.text.toString().trim()
-        binding.btnDownload.isVisible = url.isNotEmpty() && isValidUrl(url)
-    }
-
     private fun observeState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -131,71 +112,24 @@ class OnlinePlayerFragment : Fragment() {
                 }
             }
         }
-
-        // Observe text changes
-        binding.etUrl.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) {
-                updateDownloadButtonVisibility()
-            }
-        }
     }
 
     private fun playVideo(url: String) {
+        // Validate URL
         if (!isValidUrl(url)) {
             showSnackbar(getString(R.string.error_invalid_url_general))
             return
         }
 
+        // Add to history
         viewModel.addToHistory(url)
 
+        // Open player
         val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
             putExtra(PlayerActivity.EXTRA_VIDEO_URL, url)
             putExtra(PlayerActivity.EXTRA_IS_STREAMING, true)
         }
         startActivity(intent)
-    }
-
-    private fun startDownload(url: String) {
-        if (!isValidUrl(url)) {
-            showSnackbar(getString(R.string.error_invalid_url_general))
-            return
-        }
-
-        binding.progressDownload.isVisible = true
-        binding.progressDownload.isIndeterminate = true
-
-        viewModel.addToHistory(url)
-
-        val videoInfo = com.xvideo.downloader.data.model.VideoInfo(
-            tweetId = System.currentTimeMillis().toString(),
-            tweetUrl = url,
-            authorName = getString(R.string.online_video),
-            authorUsername = "online",
-            tweetText = "",
-            thumbnailUrl = null,
-            videoVariants = listOf(
-                com.xvideo.downloader.data.model.VideoVariant(
-                    url = url,
-                    bitrate = 2000000,
-                    contentType = "video/mp4"
-                )
-            ),
-            gifVariants = emptyList(),
-            m3u8Url = null,
-            hasM3u8 = false
-        )
-
-        val variant = videoInfo.getBestQualityVideo() ?: videoInfo.videoVariants.first()
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            downloadManager.startDownload(videoInfo, variant)
-        }
-
-        showSnackbar(getString(R.string.download_started))
-
-        binding.root.postDelayed({
-            binding.progressDownload.isVisible = false
-        }, 1000)
     }
 
     private fun isValidUrl(url: String): Boolean {
