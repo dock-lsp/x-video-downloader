@@ -205,7 +205,9 @@ class OnlinePlayerFragment : Fragment() {
 
             val variant = videoInfo.videoVariants.first()
 
-            downloadManager.startDownload(videoInfo, variant)
+            viewLifecycleOwner.lifecycleScope.launch {
+                downloadManager.startDownload(videoInfo, variant)
+            }
             showSnackbar(getString(R.string.downloading_video))
         } catch (e: Exception) {
             showSnackbar("Download error: ${e.message}")
