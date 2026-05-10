@@ -20,6 +20,8 @@ import com.xvideo.downloader.R
 import com.xvideo.downloader.data.local.DownloadManager
 import com.xvideo.downloader.databinding.FragmentOnlinePlayerBinding
 import com.xvideo.downloader.ui.player.PlayerActivity
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class OnlinePlayerFragment : Fragment() {
 
