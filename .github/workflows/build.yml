@@ -46,10 +46,10 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease
 
-      - name: Rename release APK
+      - name: Rename APKs
         run: |
-          mv app/build/outputs/apk/release/app-release.apk \
-             app/build/outputs/apk/release/x-video-downloader-v1.1.0-release.apk || true
+          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/x-video-downloader-v2.0.4-debug.apk
+          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/x-video-downloader-v2.0.4-release.apk || true
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -64,3 +64,28 @@ jobs:
           name: x-video-downloader-release
           path: app/build/outputs/apk/release/*.apk
           retention-days: 90
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/release/*.apk
+          tag_name: v2.0.4
+          name: X Video Downloader v2.0.4
+          body: |
+            ## v2.0.4 Release
+
+            ### Features
+            - Fixed online video download functionality
+            - Improved local video format support (mkv, webm, avi, mov, 3gp, flv, m4v)
+            - Added download progress (bytes) display in downloads page
+
+            ### Build Info
+            - Version Code: 204
+            - Target SDK: 34
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
