@@ -30,28 +30,10 @@ jobs:
       - name: Configure gradle.properties
         run: |
           cat >> gradle.properties << EOF
-          
+
           # Twitter API token from secrets
           TWITTER_BEARER_TOKEN=${{ secrets.TWITTER_BEARER_TOKEN }}
           EOF
-
-      - name: Generate release keystore
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          if [ -n "$KEYSTORE_PASSWORD" ]; then
-            keytool -genkeypair \
-              -v \
-              -keystore app/release.keystore \
-              -alias release \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -storepass "$KEYSTORE_PASSWORD" \
-              -keypass "$KEY_PASSWORD" \
-              -dname "CN=XVideoDownloader, OU=Dev, O=XVideo, L=Shanghai, ST=Shanghai, C=CN"
-          fi
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -59,27 +41,41 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Build Release APK
-        if: env.KEYSTORE_PASSWORD != ''
+      - name: Build Release APK (Unsigned)
         run: ./gradlew assembleRelease --no-daemon
 
-      - name: Rename release APK
-        if: env.KEYSTORE_PASSWORD != ''
+      - name: Rename APKs with version
         run: |
-          mv app/build/outputs/apk/release/app-release.apk \
-             app/build/outputs/apk/release/x-video-downloader-v1.1.0-release.apk || true
+          cd app/build/outputs/apk
+
+          # Rename debug APK
+          if [ -f debug/app-debug.apk ]; then
+            mv debug/app-debug.apk x-video-downloader-latest-debug.apk
+          fi
+
+          # Rename release APK
+          if [ -f release/app-release-unsigned.apk ]; then
+            mv release/app-release-unsigned.apk x-video-downloader-latest-release-unsigned.apk
+          elif [ -f release/app-release.apk ]; then
+            mv release/app-release.apk x-video-downloader-latest-release-unsigned.apk
+          fi
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: x-video-downloader-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/x-video-downloader-latest-debug.apk
           retention-days: 90
 
       - name: Upload Release APK
-        if: env.KEYSTORE_PASSWORD != ''
         uses: actions/upload-artifact@v4
         with:
-          name: x-video-downloader-release
-          path: app/build/outputs/apk/release/*.apk
+          name: x-video-downloader-release-unsigned
+          path: app/build/outputs/apk/release/x-video-downloader-latest-release-unsigned.apk
           retention-days: 90
+
+      - name: Display build outputs
+        run: |
+          echo "=== Build Outputs ==="
+          ls -lh app/build/outputs/apk/debug/
+          ls -lh app/build/outputs/apk/release/
