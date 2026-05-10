@@ -18,9 +18,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.xvideo.downloader.App
 import com.xvideo.downloader.R
-import com.xvideo.downloader.data.local.DownloadManager
-import com.xvideo.downloader.data.model.VideoInfo
-import com.xvideo.downloader.data.model.VideoVariant
 import com.xvideo.downloader.databinding.FragmentOnlinePlayerBinding
 import com.xvideo.downloader.ui.player.PlayerActivity
 import kotlinx.coroutines.flow.collectLatest
@@ -33,7 +30,6 @@ class OnlinePlayerFragment : Fragment() {
 
     private val viewModel: OnlinePlayerViewModel by viewModels()
     private lateinit var recentAdapter: RecentUrlAdapter
-    private val downloadManager: DownloadManager by lazy { App.downloadManager }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -51,7 +47,6 @@ class OnlinePlayerFragment : Fragment() {
     }
 
     private fun setupUI() {
-        // Paste button
         binding.btnPaste.setOnClickListener {
             val clipboard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val text = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
@@ -62,7 +57,6 @@ class OnlinePlayerFragment : Fragment() {
             }
         }
 
-        // Play button
         binding.btnPlay.setOnClickListener {
             val url = binding.etUrl.text.toString().trim()
             if (url.isNotEmpty()) {
@@ -72,7 +66,6 @@ class OnlinePlayerFragment : Fragment() {
             }
         }
 
-        // Clear history button
         binding.btnClearHistory.setOnClickListener {
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.clear_history_title)
@@ -84,7 +77,6 @@ class OnlinePlayerFragment : Fragment() {
                 .show()
         }
 
-        // Recent URLs RecyclerView
         recentAdapter = RecentUrlAdapter(
             onClick = { url ->
                 binding.etUrl.setText(url.url)
@@ -115,16 +107,13 @@ class OnlinePlayerFragment : Fragment() {
     }
 
     private fun playVideo(url: String) {
-        // Validate URL
         if (!isValidUrl(url)) {
             showSnackbar(getString(R.string.error_invalid_url_general))
             return
         }
 
-        // Add to history
         viewModel.addToHistory(url)
 
-        // Open player
         val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
             putExtra(PlayerActivity.EXTRA_VIDEO_URL, url)
             putExtra(PlayerActivity.EXTRA_IS_STREAMING, true)
