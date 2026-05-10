@@ -13,9 +13,6 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     private val _playbackSpeed = MutableStateFlow(1.0f)
     val playbackSpeed: StateFlow<Float> = _playbackSpeed.asStateFlow()
 
-    private val _isLocked = MutableStateFlow(false)
-    val isLocked: StateFlow<Boolean> = _isLocked.asStateFlow()
-
     private val _currentPosition = MutableStateFlow(0L)
     val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
 
@@ -27,14 +24,6 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun setPlaybackSpeed(speed: Float) {
         _playbackSpeed.value = speed
-    }
-
-    fun toggleLock() {
-        _isLocked.value = !_isLocked.value
-    }
-
-    fun unlock() {
-        _isLocked.value = false
     }
 
     fun updatePosition(position: Long) {

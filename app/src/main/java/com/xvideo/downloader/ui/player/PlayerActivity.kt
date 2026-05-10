@@ -68,13 +68,6 @@ class PlayerActivity : AppCompatActivity() {
     private var videoUrl: String? = null
     private var videoInfo: VideoInfo? = null
     private var isStreaming = false
-    private var isControlsVisible = true
-    private val controlsHideHandler = Handler(Looper.getMainLooper())
-    private val controlsHideRunnable = Runnable {
-        if (!viewModel.isLocked.value) {
-            hideAllControls()
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,24 +102,6 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
-        binding.btnLock.setOnClickListener {
-            viewModel.toggleLock()
-        }
-
-        binding.btnUnlock.setOnClickListener {
-            viewModel.unlock()
-        }
-
-        binding.btnLock.setOnTouchListener { _, _ ->
-            viewModel.toggleLock()
-            true
-        }
-
-        binding.btnUnlock.setOnTouchListener { _, _ ->
-            viewModel.unlock()
-            true
-        }
-
         // Speed control
         binding.btnSpeed.setOnClickListener { view ->
             showSpeedMenu(view)
@@ -147,13 +122,11 @@ class PlayerActivity : AppCompatActivity() {
 
             override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {
                 isSeeking = true
-                controlsHideHandler.removeCallbacks(controlsHideRunnable)
             }
 
             override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {
                 isSeeking = false
                 player?.seekTo(seekBar?.progress?.toLong() ?: 0)
-                scheduleControlsHide()
             }
         })
 
@@ -167,17 +140,17 @@ class PlayerActivity : AppCompatActivity() {
         val layoutParams = window.attributes
         layoutParams.screenBrightness = currentBrightness
         window.attributes = layoutParams
-
-        // Initial show controls
-        showAllControls()
-        scheduleControlsHide()
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupGestures() {
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                toggleControls()
+                if (isFullscreen) {
+                    onTapToShowControls()
+                } else {
+                    toggleControls()
+                }
                 return true
             }
 
@@ -199,15 +172,6 @@ class PlayerActivity : AppCompatActivity() {
         })
 
         binding.playerView.setOnTouchListener { _, event ->
-            if (viewModel.isLocked.value) {
-                if (binding.btnUnlock.visibility != View.VISIBLE) {
-                    binding.btnUnlock.visibility = View.VISIBLE
-                    binding.lockButtonContainer.visibility = View.VISIBLE
-                    scheduleUnlockButtonHide()
-                }
-                return@setOnTouchListener true
-            }
-
             gestureDetector?.onTouchEvent(event)
 
             when (event.action) {
@@ -215,7 +179,6 @@ class PlayerActivity : AppCompatActivity() {
                     initialTouchX = event.x
                     initialTouchY = event.y
                     currentVolume = player?.volume ?: 1f
-                    scheduleControlsHide()
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val deltaX = event.x - initialTouchX
@@ -259,18 +222,6 @@ class PlayerActivity : AppCompatActivity() {
             }
             true
         }
-
-        // Lock button touch listener
-        binding.btnLock.setOnTouchListener { _, _ ->
-            viewModel.toggleLock()
-            true
-        }
-
-        // Unlock button touch listener
-        binding.btnUnlock.setOnTouchListener { _, _ ->
-            viewModel.unlock()
-            true
-        }
     }
 
     private fun showSpeedMenu(anchor: View) {
@@ -292,52 +243,21 @@ class PlayerActivity : AppCompatActivity() {
         val config = Configuration()
         if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            isFullscreen = false
+            controlsHideHandler.removeCallbacks(controlsHideRunnable)
+            binding.controlsOverlay.visibility = View.VISIBLE
+            binding.topControls.visibility = View.VISIBLE
         } else {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            isFullscreen = true
+            scheduleControlsHide()
         }
-    }
-
-    private fun showAllControls() {
-        binding.controlsOverlay.visibility = View.VISIBLE
-        binding.topControls.visibility = View.VISIBLE
-        binding.lockButtonContainer.visibility = View.VISIBLE
-        isControlsVisible = true
-    }
-
-    private fun hideAllControls() {
-        binding.controlsOverlay.visibility = View.GONE
-        binding.topControls.visibility = View.GONE
-        binding.lockButtonContainer.visibility = View.GONE
-        isControlsVisible = false
-    }
-
-    private fun scheduleControlsHide() {
-        controlsHideHandler.removeCallbacks(controlsHideRunnable)
-        controlsHideHandler.postDelayed(controlsHideRunnable, 3000)
-    }
-
-    private fun scheduleUnlockButtonHide() {
-        controlsHideHandler.removeCallbacks(controlsHideRunnable)
-        controlsHideHandler.postDelayed({
-            if (viewModel.isLocked.value) {
-                binding.btnUnlock.visibility = View.GONE
-            }
-        }, 3000)
     }
 
     private fun toggleControls() {
-        if (viewModel.isLocked.value) {
-            binding.btnUnlock.visibility = View.VISIBLE
-            scheduleUnlockButtonHide()
-            return
-        }
-
-        if (isControlsVisible) {
-            hideAllControls()
-        } else {
-            showAllControls()
-            scheduleControlsHide()
-        }
+        val isVisible = binding.controlsOverlay.visibility == View.VISIBLE
+        binding.controlsOverlay.visibility = if (isVisible) View.GONE else View.VISIBLE
+        binding.topControls.visibility = if (isVisible) View.GONE else View.VISIBLE
     }
 
     private fun showSeekFeedback(delta: Long) {
@@ -368,19 +288,6 @@ class PlayerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel.isLocked.collectLatest { isLocked ->
-                        if (isLocked) {
-                            hideAllControls()
-                            binding.btnUnlock.visibility = View.VISIBLE
-                            binding.lockButtonContainer.visibility = View.GONE
-                        } else {
-                            showAllControls()
-                            scheduleControlsHide()
-                        }
-                    }
-                }
-
-                launch {
                     viewModel.playbackSpeed.collectLatest { speed ->
                         player?.setPlaybackSpeed(speed)
                     }
@@ -395,6 +302,28 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private var isFullscreen = false
+    private val controlsHideHandler = Handler(Looper.getMainLooper())
+    private val controlsHideRunnable = Runnable {
+        if (binding.controlsOverlay.visibility == View.VISIBLE) {
+            binding.controlsOverlay.visibility = View.GONE
+            binding.topControls.visibility = View.GONE
+        }
+    }
+
+    private fun scheduleControlsHide() {
+        controlsHideHandler.removeCallbacks(controlsHideRunnable)
+        if (isFullscreen) {
+            controlsHideHandler.postDelayed(controlsHideRunnable, 3000)
+        }
+    }
+
+    private fun onTapToShowControls() {
+        binding.controlsOverlay.visibility = View.VISIBLE
+        binding.topControls.visibility = View.VISIBLE
+        scheduleControlsHide()
     }
 
     private fun initializePlayer() {
@@ -481,11 +410,6 @@ class PlayerActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         releasePlayer()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        controlsHideHandler.removeCallbacksAndMessages(null)
     }
 
     private fun hideSystemUI() {
