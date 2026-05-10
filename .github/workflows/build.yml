@@ -7,13 +7,13 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.internal.http.connectionTimeout=180000 -Dorg.gradle.internal.http.socketTimeout=180000 -Dorg.gradle.internal.repository.max.retries=10"
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    
-    env:
-      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.internal.http.socketTimeout=120000 -Dorg.gradle.internal.http.connectionTimeout=120000"
-      ORG_GRADLE_PROJECT_daemon: "false"
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code
@@ -55,10 +55,10 @@ jobs:
       - name: Rename APKs
         run: |
           if [ -f app/build/outputs/apk/debug/app-debug.apk ]; then
-            mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/x-video-downloader-v2.0.4-debug.apk
+            mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/x-video-downloader-v2.0.5-debug.apk
           fi
           if [ -f app/build/outputs/apk/release/app-release.apk ]; then
-            mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/x-video-downloader-v2.0.4-release.apk
+            mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/x-video-downloader-v2.0.5-release.apk
           fi
 
       - name: Upload Debug APK
@@ -84,18 +84,22 @@ jobs:
           files: |
             app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/release/*.apk
-          tag_name: v2.0.4
-          name: X Video Downloader v2.0.4
+          tag_name: v2.0.5
+          name: X Video Downloader v2.0.5
           body: |
-            ## v2.0.4 Release
+            ## v2.0.5 Release
 
             ### Features
-            - Fixed online video download functionality
-            - Improved local video format support (mkv, webm, avi, mov, 3gp, flv, m4v)
-            - Added download progress (bytes) display in downloads page
+            - Added fullscreen lock/unlock button
+            - Lock button in top-right corner
+            - Unlock button appears on tap (auto-hides after 2s)
+            - Does not affect video viewing
+            - Fixed .ts file exclusion in local video scanning
+            - Added video format detection in online player
+            - Added one-click download functionality
 
             ### Build Info
-            - Version Code: 204
+            - Version Code: 205
             - Target SDK: 34
           draft: false
           prerelease: false
