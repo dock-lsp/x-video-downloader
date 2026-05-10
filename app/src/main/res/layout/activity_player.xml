@@ -72,6 +72,15 @@
 
         </LinearLayout>
 
+        <ImageButton
+            android:id="@+id/btnLock"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_lock_open"
+            android:contentDescription="Lock"
+            app:tint="@android:color/white" />
+
     </LinearLayout>
 
     <!-- Center Seek Feedback Only (no play/pause button) -->

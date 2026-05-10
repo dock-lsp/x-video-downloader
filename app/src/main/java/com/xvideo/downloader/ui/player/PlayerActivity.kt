@@ -53,7 +53,6 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    // Gesture detection
     private var gestureDetector: GestureDetector? = null
     private var scaleGestureDetector: ScaleGestureDetector? = null
     private var initialTouchX = 0f
@@ -68,13 +67,13 @@ class PlayerActivity : AppCompatActivity() {
     private var videoUrl: String? = null
     private var videoInfo: VideoInfo? = null
     private var isStreaming = false
+    private var isLocked = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Get intent data
         videoUrl = intent.getStringExtra(EXTRA_VIDEO_URL)
         videoInfo = intent.getParcelableExtra(EXTRA_VIDEO_INFO)
         isStreaming = intent.getBooleanExtra(EXTRA_IS_STREAMING, false)
@@ -86,12 +85,10 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        // Back button
         binding.btnBack.setOnClickListener {
             finish()
         }
 
-        // Play/Pause
         binding.btnPlayPause.setOnClickListener {
             player?.let {
                 if (it.isPlaying) {
@@ -102,17 +99,22 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
-        // Speed control
         binding.btnSpeed.setOnClickListener { view ->
             showSpeedMenu(view)
         }
 
-        // Fullscreen
         binding.btnFullscreen.setOnClickListener {
             toggleFullscreen()
         }
 
-        // Seek bar
+        binding.btnLock.setOnClickListener {
+            toggleLock()
+        }
+
+        binding.btnUnlock.setOnClickListener {
+            unlock()
+        }
+
         binding.seekBar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
@@ -130,13 +132,11 @@ class PlayerActivity : AppCompatActivity() {
             }
         })
 
-        // Video info
         videoInfo?.let { info ->
             binding.tvVideoTitle.text = info.authorName
             binding.tvVideoAuthor.text = "@${info.authorUsername}"
         }
 
-        // Apply initial brightness
         val layoutParams = window.attributes
         layoutParams.screenBrightness = currentBrightness
         window.attributes = layoutParams
@@ -158,11 +158,9 @@ class PlayerActivity : AppCompatActivity() {
                 player?.let {
                     val screenWidth = binding.playerView.width
                     if (e.x < screenWidth / 2) {
-                        // Double tap left - rewind 10s
                         it.seekTo(maxOf(0, it.currentPosition - 10000))
                         showSeekFeedback(-10000)
                     } else {
-                        // Double tap right - forward 10s
                         it.seekTo(minOf(it.duration, it.currentPosition + 10000))
                         showSeekFeedback(10000)
                     }
@@ -185,7 +183,6 @@ class PlayerActivity : AppCompatActivity() {
                     val deltaY = event.y - initialTouchY
 
                     if (abs(deltaX) > 50 && abs(deltaX) > abs(deltaY) && !isSeeking) {
-                        // Horizontal seek
                         isSeeking = true
                         val seekDelta = ((deltaX / binding.playerView.width) * player?.duration!! / 10).toLong()
                         seekDelta.let {
@@ -193,10 +190,8 @@ class PlayerActivity : AppCompatActivity() {
                             showSeekFeedback(it)
                         }
                     } else if (abs(deltaY) > 50 && abs(deltaY) > abs(deltaX) && !isSeeking) {
-                        // Vertical volume/brightness
                         val screenThird = binding.playerView.width / 3
                         if (initialTouchX < screenThird) {
-                            // Left side - brightness
                             isChangingBrightness = true
                             val brightnessDelta = -deltaY / binding.playerView.height
                             currentBrightness = (currentBrightness + brightnessDelta).coerceIn(0.1f, 1f)
@@ -205,7 +200,6 @@ class PlayerActivity : AppCompatActivity() {
                             window.attributes = layoutParams
                             showBrightnessIndicator()
                         } else if (initialTouchX > screenThird * 2) {
-                            // Right side - volume
                             isChangingVolume = true
                             val volumeDelta = -deltaY / binding.playerView.height
                             currentVolume = (currentVolume + volumeDelta).coerceIn(0f, 1f)
@@ -252,6 +246,31 @@ class PlayerActivity : AppCompatActivity() {
             isFullscreen = true
             scheduleControlsHide()
         }
+    }
+
+    private fun toggleLock() {
+        isLocked = !isLocked
+        if (isLocked) {
+            binding.btnLock.setImageResource(R.drawable.ic_lock)
+            binding.btnUnlock.visibility = View.GONE
+            binding.controlsOverlay.visibility = View.GONE
+            binding.topControls.visibility = View.GONE
+            controlsHideHandler.removeCallbacks(controlsHideRunnable)
+        } else {
+            binding.btnLock.setImageResource(R.drawable.ic_lock_open)
+            binding.controlsOverlay.visibility = View.VISIBLE
+            binding.topControls.visibility = View.VISIBLE
+            scheduleControlsHide()
+        }
+    }
+
+    private fun unlock() {
+        isLocked = false
+        binding.btnLock.setImageResource(R.drawable.ic_lock_open)
+        binding.btnUnlock.visibility = View.GONE
+        binding.controlsOverlay.visibility = View.VISIBLE
+        binding.topControls.visibility = View.VISIBLE
+        scheduleControlsHide()
     }
 
     private fun toggleControls() {
@@ -315,19 +334,26 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun scheduleControlsHide() {
         controlsHideHandler.removeCallbacks(controlsHideRunnable)
-        if (isFullscreen) {
+        if (isFullscreen && !isLocked) {
             controlsHideHandler.postDelayed(controlsHideRunnable, 3000)
         }
     }
 
     private fun onTapToShowControls() {
-        binding.controlsOverlay.visibility = View.VISIBLE
-        binding.topControls.visibility = View.VISIBLE
-        scheduleControlsHide()
+        if (isLocked) {
+            binding.btnUnlock.visibility = View.VISIBLE
+            controlsHideHandler.removeCallbacks(controlsHideRunnable)
+            controlsHideHandler.postDelayed({
+                binding.btnUnlock.visibility = View.GONE
+            }, 2000)
+        } else {
+            binding.controlsOverlay.visibility = View.VISIBLE
+            binding.topControls.visibility = View.VISIBLE
+            scheduleControlsHide()
+        }
     }
 
     private fun initializePlayer() {
-        // Enable hardware-accelerated decoding with DefaultRenderersFactory
         val renderersFactory = DefaultRenderersFactory(this)
             .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
 
@@ -357,7 +383,6 @@ class PlayerActivity : AppCompatActivity() {
                             binding.tvDuration.text = FileUtils.formatDuration(exoPlayer.duration)
                             viewModel.updateDuration(exoPlayer.duration)
 
-                            // Save playback history
                             val title = videoInfo?.authorName ?: videoUrl?.substringAfterLast("/")?.substringBefore("?") ?: "Unknown Video"
                             videoUrl?.let { url ->
                                 historyManager.addHistory(title, url, exoPlayer.duration)
@@ -422,7 +447,6 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        // Handle orientation change
     }
 
     companion object {
