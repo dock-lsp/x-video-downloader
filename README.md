@@ -26,11 +26,23 @@
 - ✅ 扫描本地视频文件
 - ✅ 视频缩略图显示
 - ✅ 多种排序方式（时间/大小/名称）
+- ✅ 支持更多格式：mkv, webm, avi, mov, 3gp, flv, m4v
 
 ### UI 设计
 - ✅ Material Design 3 风格
 - ✅ 深色/浅色主题切换
 - ✅ 底部导航栏：首页 | 下载 | 本地 | 设置
+- ✅ 底部导航栏按压效果和选中高亮
+
+### 多语言支持
+- ✅ 中文 (zh)
+- ✅ 英语 (en)
+- ✅ 日语 (ja)
+- ✅ 西班牙语 (es)
+- ✅ 法语 (fr)
+- ✅ 德语 (de)
+- ✅ 俄语 (ru)
+- ✅ 阿拉伯语 (ar)
 
 ## 技术栈
 
@@ -74,7 +86,7 @@ app/src/main/java/com/xvideo/downloader/
 
 1. 克隆项目
 ```bash
-git clone https://github.com/qq00150610-cpu/x-video-downloader.git
+git clone https://github.com/dock-lsp/x-video-downloader.git
 cd x-video-downloader
 ```
 
@@ -89,12 +101,6 @@ cd x-video-downloader
 
 项目配置了自动构建，推送到 main 分支将自动触发构建。
 
-需要配置的 Secrets：
-- `KEYSTORE_BASE64`: 签名文件 Base64 编码
-- `KEYSTORE_PASSWORD`: 签名密码
-- `KEY_ALIAS`: 签名别名
-- `KEY_PASSWORD`: 签名密钥密码
-
 ## 权限说明
 
 - `INTERNET`: 网络访问
@@ -107,6 +113,22 @@ cd x-video-downloader
 ## 下载目录
 
 视频默认保存在：`Android/data/com.xvideo.downloader/files/Movies/XVideoDownloader/`
+
+## 更新日志
+
+### v2.0.4
+- 修复在线视频下载功能
+- 本地视频支持更多格式
+- 下载页面显示字节进度
+
+### v2.0.3
+- 底部导航栏优化
+- 视频播放器锁屏按钮优化
+- 控制栏自动隐藏功能
+
+### v2.0.1
+- 修复应用崩溃问题
+- 移除有问题的AI功能
 
 ## License
 
