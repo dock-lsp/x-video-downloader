@@ -59,4 +59,26 @@
     <style name="BottomNavTextInactive" parent="TextAppearance.Material3.LabelSmall">
         <item name="android:textSize">10sp</item>
     </style>
+
+    <!-- Bottom Navigation Item Style -->
+    <style name="BottomNavItem">
+        <item name="android:background">@drawable/bg_nav_item</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:textColor">@color/bottom_nav_text_color</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <!-- Active indicator for bottom nav -->
+    <style name="BottomNavActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/primary_light</item>
+        <item name="shapeAppearance">@style/BottomNavActiveIndicatorShape</item>
+    </style>
+
+    <style name="BottomNavActiveIndicatorShape" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerSize">16dp</item>
+    </style>
 </resources>

@@ -20,9 +20,11 @@
         android:background="?attr/colorSurface"
         app:menu="@menu/bottom_navigation"
         app:labelVisibilityMode="labeled"
-        app:itemIconSize="22dp"
+        app:itemIconSize="0dp"
         app:itemTextAppearanceActive="@style/BottomNavTextActive"
         app:itemTextAppearanceInactive="@style/BottomNavTextInactive"
+        app:itemTextColor="@color/bottom_nav_text_color"
+        app:itemActiveIndicatorStyle="@style/BottomNavActiveIndicator"
         app:elevation="8dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
