@@ -131,12 +131,15 @@
     <string name="nav_online">オンライン</string>
     <string name="hint_enter_video_url">動画URLを入力</string>
     <string name="btn_play_online">オンライン再生</string>
+    <string name="btn_download_video">Download Video</string>
     <string name="supported_formats_hint">MP4、M3U8、DASH、WebMなどの直接動画リンクをサポート</string>
     <string name="recent_play_history">再生履歴</string>
     <string name="empty_online_hint">上に動画URLを貼り付けて再生開始</string>
     <string name="error_invalid_url_general">有効な動画URLを入力してください</string>
     <string name="clear_history_title">履歴をクリア</string>
     <string name="clear_history_message">すべての再生履歴をクリアしてもよろしいですか？</string>
+    <string name="detecting_video">Detecting video…</string>
+    <string name="download_started">Download started</string>
 
     <!-- Messages -->
     <string name="please_enter_url">URLを入力してください</string>

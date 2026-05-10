@@ -187,6 +187,12 @@ class ActiveDownloadsAdapter(
                 progressBar.progress = task.progress
                 progressBar.max = 100
 
+                if (task.totalBytes > 0) {
+                    tvBytesProgress.text = "${FileUtils.formatFileSize(task.downloadedBytes)} / ${FileUtils.formatFileSize(task.totalBytes)}"
+                } else {
+                    tvBytesProgress.text = FileUtils.formatFileSize(task.downloadedBytes)
+                }
+
                 when (task.state) {
                     DownloadTaskState.DOWNLOADING -> {
                         btnPauseResume.setImageResource(android.R.drawable.ic_media_pause)

@@ -124,8 +124,9 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
         val context = getApplication<Application>()
         val downloadDir = com.xvideo.downloader.util.FileUtils.getVideoDirectory(context)
 
-        downloadDir.listFiles()?.filter { it.isFile && it.extension == "mp4" }?.forEach { file ->
-            // Check if already in list
+        val supportedExtensions = setOf("mp4", "mkv", "webm", "avi", "mov", "3gp", "flv", "m4v")
+        
+        downloadDir.listFiles()?.filter { it.isFile && it.extension.lowercase() in supportedExtensions }?.forEach { file ->
             if (videos.none { it.path == file.absolutePath }) {
                 videos.add(
                     LocalVideo(
@@ -134,7 +135,7 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
                         path = file.absolutePath,
                         uri = android.net.Uri.fromFile(file),
                         size = file.length(),
-                        duration = 0, // Duration unknown without parsing
+                        duration = 0,
                         dateAdded = file.lastModified() / 1000,
                         width = 0,
                         height = 0

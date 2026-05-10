@@ -50,12 +50,13 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:max="100"
+            app:trackCornerRadius="4dp"
             tools:progress="45" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -66,6 +67,15 @@
                 android:textAppearance="@style/TextAppearance.Material3.BodySmall"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 tools:text="45%" />
+
+            <TextView
+                android:id="@+id/tvBytesProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="45.2 MB / 100.5 MB" />
 
             <View
                 android:layout_width="0dp"

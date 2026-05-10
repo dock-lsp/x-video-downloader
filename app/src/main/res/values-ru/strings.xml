@@ -131,12 +131,15 @@
     <string name="nav_online">Онлайн</string>
     <string name="hint_enter_video_url">Введите URL видео</string>
     <string name="btn_play_online">Воспроизвести онлайн</string>
+    <string name="btn_download_video">Download Video</string>
     <string name="supported_formats_hint">Поддерживает MP4, M3U8, DASH, WebM и другие прямые ссылки на видео</string>
     <string name="recent_play_history">Недавняя история</string>
     <string name="empty_online_hint">Вставьте URL видео выше, чтобы начать</string>
     <string name="error_invalid_url_general">Пожалуйста, введите корректную ссылку на видео</string>
     <string name="clear_history_title">Очистить историю</string>
     <string name="clear_history_message">Вы уверены, что хотите очистить всю историю воспроизведения?</string>
+    <string name="detecting_video">Detecting video…</string>
+    <string name="download_started">Download started</string>
 
     <!-- Messages -->
     <string name="please_enter_url">Пожалуйста, введите ссылку</string>

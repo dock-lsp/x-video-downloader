@@ -131,12 +131,15 @@
     <string name="nav_online">Online</string>
     <string name="hint_enter_video_url">Video-URL eingeben</string>
     <string name="btn_play_online">Online abspielen</string>
+    <string name="btn_download_video">Download Video</string>
     <string name="supported_formats_hint">Unterstützt MP4, M3U8, DASH, WebM und andere direkte Video-Links</string>
     <string name="recent_play_history">Letzter Verlauf</string>
     <string name="empty_online_hint">Fügen Sie oben eine Video-URL ein, um zu beginnen</string>
     <string name="error_invalid_url_general">Bitte geben Sie eine gültige Video-URL ein</string>
     <string name="clear_history_title">Verlauf löschen</string>
     <string name="clear_history_message">Sind Sie sicher, dass Sie den gesamten Wiedergabeverlauf löschen möchten?</string>
+    <string name="detecting_video">Detecting video…</string>
+    <string name="download_started">Download started</string>
 
     <!-- Messages -->
     <string name="please_enter_url">Bitte geben Sie eine URL ein</string>

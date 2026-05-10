@@ -81,7 +81,28 @@
                     android:text="@string/btn_play_online"
                     app:icon="@drawable/ic_play" />
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDownload"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/btn_download_video"
+                    android:visibility="gone"
+                    app:icon="@drawable/ic_download"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    tools:visibility="visible" />
+
             </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progressDownload"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                style="@style/Widget.Material3.LinearProgressIndicator"
+                tools:visibility="visible" />
 
             <!-- Supported formats hint -->
             <TextView

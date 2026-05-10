@@ -131,12 +131,15 @@
     <string name="nav_online">عبر الإنترنت</string>
     <string name="hint_enter_video_url">أدخل رابط الفيديو</string>
     <string name="btn_play_online">تشغيل عبر الإنترنت</string>
+    <string name="btn_download_video">Download Video</string>
     <string name="supported_formats_hint">يدعم MP4 و M3U8 و DASH و WebM وغيرها من روابط الفيديو المباشرة</string>
     <string name="recent_play_history">السجل الأخير</string>
     <string name="empty_online_hint">الصق رابط الفيديو أعلاه للبدء</string>
     <string name="error_invalid_url_general">يرجى إدخال رابط فيديو صالح</string>
     <string name="clear_history_title">مسح السجل</string>
     <string name="clear_history_message">هل أنت متأكد أنك تريد مسح كل سجل التشغيل؟</string>
+    <string name="detecting_video">Detecting video…</string>
+    <string name="download_started">Download started</string>
 
     <!-- Messages -->
     <string name="please_enter_url">يرجى إدخال رابط</string>
