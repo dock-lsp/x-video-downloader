@@ -38,44 +38,46 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+      - name: Build Both Debug and Release
+        run: ./gradlew assembleDebug assembleRelease --no-daemon
 
-      - name: Build Release APK (Unsigned)
-        run: ./gradlew assembleRelease --no-daemon
-
-      - name: Rename APKs with version
+      - name: Prepare Debug APK
         run: |
-          cd app/build/outputs/apk
-
-          # Rename debug APK
-          if [ -f debug/app-debug.apk ]; then
-            mv debug/app-debug.apk x-video-downloader-latest-debug.apk
+          mkdir -p output
+          if [ -f app/build/outputs/apk/debug/app-debug.apk ]; then
+            cp app/build/outputs/apk/debug/app-debug.apk output/x-video-downloader-latest-debug.apk
+            echo "✅ Debug APK ready"
           fi
 
-          # Rename release APK
-          if [ -f release/app-release-unsigned.apk ]; then
-            mv release/app-release-unsigned.apk x-video-downloader-latest-release-unsigned.apk
-          elif [ -f release/app-release.apk ]; then
-            mv release/app-release.apk x-video-downloader-latest-release-unsigned.apk
+      - name: Prepare Release APK
+        run: |
+          mkdir -p output
+          if [ -f app/build/outputs/apk/release/app-release-unsigned.apk ]; then
+            cp app/build/outputs/apk/release/app-release-unsigned.apk output/x-video-downloader-latest-release-unsigned.apk
+          elif [ -f app/build/outputs/apk/release/app-release.apk ]; then
+            cp app/build/outputs/apk/release/app-release.apk output/x-video-downloader-latest-release-unsigned.apk
           fi
+          if [ -f output/x-video-downloader-latest-release-unsigned.apk ]; then
+            echo "✅ Release APK ready"
+          fi
+
+      - name: List output files
+        run: |
+          echo "=== Build Outputs ==="
+          ls -lh output/
 
       - name: Upload Debug APK
+        if: hashFiles('app/build/outputs/apk/debug/app-debug.apk') != ''
         uses: actions/upload-artifact@v4
         with:
           name: x-video-downloader-debug
-          path: app/build/outputs/apk/debug/x-video-downloader-latest-debug.apk
+          path: output/x-video-downloader-latest-debug.apk
           retention-days: 90
 
       - name: Upload Release APK
+        if: hashFiles('output/x-video-downloader-latest-release-unsigned.apk') != ''
         uses: actions/upload-artifact@v4
         with:
           name: x-video-downloader-release-unsigned
-          path: app/build/outputs/apk/release/x-video-downloader-latest-release-unsigned.apk
+          path: output/x-video-downloader-latest-release-unsigned.apk
           retention-days: 90
-
-      - name: Display build outputs
-        run: |
-          echo "=== Build Outputs ==="
-          ls -lh app/build/outputs/apk/debug/
-          ls -lh app/build/outputs/apk/release/
