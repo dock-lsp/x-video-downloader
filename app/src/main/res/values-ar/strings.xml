@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">X Video Downloader</string>
+    <string name="app_description">تحميل الفيديوهات من Twitter/X</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">الرئيسية</string>
+    <string name="nav_downloads">التحميلات</string>
+    <string name="nav_local">المحلي</string>
+    <string name="nav_settings">الإعدادات</string>
+
+    <!-- Home -->
+    <string name="hint_paste_url">الصق رابط Twitter/X</string>
+    <string name="btn_paste">لصق</string>
+    <string name="btn_parse">تحليل</string>
+    <string name="btn_download">تحميل</string>
+    <string name="btn_play">تشغيل</string>
+    <string name="btn_download_gif">تحميل GIF</string>
+    <string name="select_quality">اختر الجودة</string>
+    <string name="parsing">جاري تحليل الفيديو…</string>
+
+    <!-- Downloads -->
+    <string name="active_downloads">التحميلات النشطة</string>
+    <string name="history">السجل</string>
+    <string name="no_active_downloads">لا توجد تحميلات نشطة</string>
+    <string name="no_download_history">لا يوجد سجل تحميلات</string>
+
+    <!-- Local Videos -->
+    <string name="local_videos">الفيديوهات المحلية</string>
+    <string name="no_local_videos">لم يتم العثور على فيديوهات محلية</string>
+    <string name="sort">ترتيب</string>
+
+    <!-- Settings -->
+    <string name="settings">الإعدادات</string>
+    <string name="appearance">المظهر</string>
+    <string name="theme">السمة</string>
+    <string name="theme_system">النظام</string>
+    <string name="theme_light">فاتح</string>
+    <string name="theme_dark">داكن</string>
+    <string name="language">اللغة</string>
+    <string name="downloads_section">التحميلات</string>
+    <string name="default_quality">الجودة الافتراضية</string>
+    <string name="auto_play">تشغيل الفيديوهات تلقائياً</string>
+    <string name="storage">التخزين</string>
+    <string name="clear_cache">مسح ذاكرة التخزين المؤقت</string>
+    <string name="about">حول</string>
+    <string name="version">الإصدار</string>
+
+    <!-- Player -->
+    <string name="speed">السرعة</string>
+    <string name="fullscreen">ملء الشاشة</string>
+    <string name="lock">قفل</string>
+    <string name="unlock">إلغاء القفل</string>
+
+    <!-- Errors -->
+    <string name="error">خطأ</string>
+    <string name="error_invalid_url">يرجى إدخال رابط Twitter/X صالح</string>
+    <string name="error_parse_failed">فشل تحليل الفيديو</string>
+    <string name="error_download_failed">فشل التحميل</string>
+    <string name="error_no_video">لم يتم العثور على فيديو في هذا التغريدة</string>
+
+    <!-- Dialogs -->
+    <string name="clear_cache_title">مسح ذاكرة التخزين المؤقت</string>
+    <string name="clear_cache_message">سيؤدي هذا إلى حذف جميع البيانات المخزنة مؤقتاً. هل تريد المتابعة؟</string>
+    <string name="clear">مسح</string>
+    <string name="cancel">إلغاء</string>
+    <string name="ok">موافق</string>
+    <string name="confirm">تأكيد</string>
+
+    <!-- Sort options -->
+    <string name="sort_date_newest">التاريخ (الأحدث)</string>
+    <string name="sort_date_oldest">التاريخ (الأقدم)</string>
+    <string name="sort_size_largest">الحجم (الأكبر)</string>
+    <string name="sort_size_smallest">الحجم (الأصغر)</string>
+    <string name="sort_name_az">الاسم (أ-ي)</string>
+    <string name="sort_name_za">الاسم (ي-أ)</string>
+
+    <!-- Video details -->
+    <string name="video_name">الاسم</string>
+    <string name="video_path">المسار</string>
+    <string name="video_size">الحجم</string>
+    <string name="video_duration">المدة</string>
+    <string name="video_resolution">الدقة</string>
+    <string name="unknown">غير معروف</string>
+
+    <!-- Download states -->
+    <string name="downloading">جاري التحميل</string>
+    <string name="paused">متوقف مؤقتاً</string>
+    <string name="completed">مكتمل</string>
+    <string name="failed">فشل</string>
+
+    <!-- Share -->
+    <string name="share_video">مشاركة الفيديو</string>
+
+    <!-- Permissions -->
+    <string name="permission_denied">تم رفض بعض الأذونات. قد لا تعمل بعض الميزات بشكل صحيح.</string>
+
+    <!-- Player controls -->
+    <string name="rewind">ترجيع</string>
+    <string name="forward">تقديم</string>
+    <string name="next">التالي</string>
+    <string name="previous">السابق</string>
+
+    <!-- Clipboard -->
+    <string name="clipboard_empty">الحافظة فارغة</string>
+
+    <!-- About dialog -->
+    <string name="about_description">محمل فيديو Twitter/X قوي لنظام Android.</string>
+    <string name="about_features">الميزات:</string>
+    <string name="about_feature_download">تحميل الفيديوهات من Twitter/X</string>
+    <string name="about_feature_quality">خيارات جودة متعددة (SD/HD/2K/4K)</string>
+    <string name="about_feature_gif">تحميل ملفات GIF</string>
+    <string name="about_feature_player">مشغل فيديو مدمج</string>
+    <string name="about_feature_local">إدارة الفيديوهات المحلية</string>
+
+    <!-- Language options -->
+    <string name="lang_english">English</string>
+    <string name="lang_chinese">中文（简体）</string>
+    <string name="lang_korean">한국어</string>
+    <string name="select_language">اختر اللغة</string>
+
+    <!-- Quality options -->
+    <string name="quality_best">الأفضل</string>
+    <string name="quality_4k">4K</string>
+    <string name="quality_2k">2K</string>
+    <string name="quality_hd">HD</string>
+    <string name="quality_sd">SD</string>
+
+    <!-- Online Player -->
+    <string name="online_player">مشغل على الإنترنت</string>
+    <string name="nav_online">عبر الإنترنت</string>
+    <string name="hint_enter_video_url">أدخل رابط الفيديو</string>
+    <string name="btn_play_online">تشغيل عبر الإنترنت</string>
+    <string name="supported_formats_hint">يدعم MP4 و M3U8 و DASH و WebM وغيرها من روابط الفيديو المباشرة</string>
+    <string name="recent_play_history">السجل الأخير</string>
+    <string name="empty_online_hint">الصق رابط الفيديو أعلاه للبدء</string>
+    <string name="error_invalid_url_general">يرجى إدخال رابط فيديو صالح</string>
+    <string name="clear_history_title">مسح السجل</string>
+    <string name="clear_history_message">هل أنت متأكد أنك تريد مسح كل سجل التشغيل؟</string>
+
+    <!-- Messages -->
+    <string name="please_enter_url">يرجى إدخال رابط</string>
+    <string name="download_completed">اكتمل التحميل!</string>
+    <string name="cache_cleared">تم مسح ذاكرة التخزين المؤقت</string>
+    <string name="cache_clear_failed">فشل مسح ذاكرة التخزين المؤقت</string>
+    <string name="opening_player">جاري فتح المشغل…</string>
+    <string name="file_not_found">الملف غير موجود</string>
+
+    <!-- Format strings -->
+    <string name="version_format">الإصدار %1$s</string>
+    <string name="version_default">الإصدار 1.0.0</string>
+    <string name="about_content">محمل فيديو Twitter/X قوي لنظام Android.\n\nالميزات:\n• تحميل الفيديوهات من Twitter/X\n• خيارات جودة متعددة (SD/HD/2K/4K)\n• تحميل ملفات GIF\n• مشغل فيديو مدمج\n• إدارة الفيديوهات المحلية\n\nالإصدار: %1$s</string>
+
+    <!-- Additional strings -->
+    <string name="video_details">التفاصيل</string>
+    <string name="error_format">خطأ: %1$s</string>
+
+    <!-- Stream type -->
+    <string name="stream_hls">HLS (M3U8)</string>
+    <string name="stream_direct">MP4 مباشر</string>
+    <string name="parsing_m3u8">جاري تحليل قائمة تشغيل M3U8…</string>
+    <string name="downloading_video_stream">جاري تحميل تدفق الفيديو…</string>
+    <string name="downloading_audio_stream">جاري تحميل تدفق الصوت…</string>
+    <string name="merging_ffmpeg">جاري دمج الصوت + الفيديو (FFmpeg)…</string>
+</resources>

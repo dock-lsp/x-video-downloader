@@ -72,15 +72,6 @@
 
         </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/btnLock"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_lock"
-            android:contentDescription="Lock"
-            app:tint="@android:color/white" />
-
     </LinearLayout>
 
     <!-- Center Seek Feedback Only (no play/pause button) -->
@@ -97,6 +88,28 @@
         android:visibility="gone"
         tools:text="+10s"
         tools:visibility="visible" />
+
+    <!-- Right Side Lock Button (auto-hide) -->
+    <FrameLayout
+        android:id="@+id/lockButtonContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="end|center_vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ImageButton
+            android:id="@+id/btnLock"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_gravity="center"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_circle_translucent"
+            android:src="@drawable/ic_lock"
+            android:contentDescription="Lock"
+            app:tint="@android:color/white" />
+
+    </FrameLayout>
 
     <!-- Bottom Controls -->
     <LinearLayout
@@ -194,12 +207,13 @@
 
     </LinearLayout>
 
-    <!-- Unlock Button (shown when locked) -->
+    <!-- Unlock Button (shown when locked) - moved to right side center -->
     <ImageButton
         android:id="@+id/btnUnlock"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:layout_gravity="center"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="16dp"
         android:background="@drawable/bg_circle_translucent"
         android:src="@drawable/ic_lock_open"
         android:visibility="gone"

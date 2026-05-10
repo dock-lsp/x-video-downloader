@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">X Видео Загрузчик</string>
+    <string name="app_description">Скачать видео из Twitter/X</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Главная</string>
+    <string name="nav_downloads">Загрузки</string>
+    <string name="nav_local">Локальные</string>
+    <string name="nav_settings">Настройки</string>
+
+    <!-- Home -->
+    <string name="hint_paste_url">Вставьте ссылку Twitter/X</string>
+    <string name="btn_paste">Вставить</string>
+    <string name="btn_parse">Анализ</string>
+    <string name="btn_download">Скачать</string>
+    <string name="btn_play">Воспроизвести</string>
+    <string name="btn_download_gif">Скачать GIF</string>
+    <string name="select_quality">Выбрать качество</string>
+    <string name="parsing">Анализ видео…</string>
+
+    <!-- Downloads -->
+    <string name="active_downloads">Активные загрузки</string>
+    <string name="history">История</string>
+    <string name="no_active_downloads">Нет активных загрузок</string>
+    <string name="no_download_history">Нет истории загрузок</string>
+
+    <!-- Local Videos -->
+    <string name="local_videos">Локальные видео</string>
+    <string name="no_local_videos">Локальные видео не найдены</string>
+    <string name="sort">Сортировка</string>
+
+    <!-- Settings -->
+    <string name="settings">Настройки</string>
+    <string name="appearance">Внешний вид</string>
+    <string name="theme">Тема</string>
+    <string name="theme_system">Системная</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="language">Язык</string>
+    <string name="downloads_section">Загрузки</string>
+    <string name="default_quality">Качество по умолчанию</string>
+    <string name="auto_play">Автовоспроизведение видео</string>
+    <string name="storage">Хранилище</string>
+    <string name="clear_cache">Очистить кэш</string>
+    <string name="about">О приложении</string>
+    <string name="version">Версия</string>
+
+    <!-- Player -->
+    <string name="speed">Скорость</string>
+    <string name="fullscreen">Полный экран</string>
+    <string name="lock">Заблокировать</string>
+    <string name="unlock">Разблокировать</string>
+
+    <!-- Errors -->
+    <string name="error">Ошибка</string>
+    <string name="error_invalid_url">Пожалуйста, введите корректную ссылку Twitter/X</string>
+    <string name="error_parse_failed">Не удалось проанализировать видео</string>
+    <string name="error_download_failed">Ошибка загрузки</string>
+    <string name="error_no_video">Видео не найдено в этом твите</string>
+
+    <!-- Dialogs -->
+    <string name="clear_cache_title">Очистить кэш</string>
+    <string name="clear_cache_message">Это удалит все кэшированные данные. Продолжить?</string>
+    <string name="clear">Очистить</string>
+    <string name="cancel">Отмена</string>
+    <string name="ok">ОК</string>
+    <string name="confirm">Подтвердить</string>
+
+    <!-- Sort options -->
+    <string name="sort_date_newest">Дата (новые)</string>
+    <string name="sort_date_oldest">Дата (старые)</string>
+    <string name="sort_size_largest">Размер (большие)</string>
+    <string name="sort_size_smallest">Размер (малые)</string>
+    <string name="sort_name_az">Имя (А-Я)</string>
+    <string name="sort_name_za">Имя (Я-А)</string>
+
+    <!-- Video details -->
+    <string name="video_name">Название</string>
+    <string name="video_path">Путь</string>
+    <string name="video_size">Размер</string>
+    <string name="video_duration">Длительность</string>
+    <string name="video_resolution">Разрешение</string>
+    <string name="unknown">Неизвестно</string>
+
+    <!-- Download states -->
+    <string name="downloading">Загрузка</string>
+    <string name="paused">Приостановлено</string>
+    <string name="completed">Завершено</string>
+    <string name="failed">Ошибка</string>
+
+    <!-- Share -->
+    <string name="share_video">Поделиться видео</string>
+
+    <!-- Permissions -->
+    <string name="permission_denied">Некоторые разрешения были отклонены. Некоторые функции могут работать некорректно.</string>
+
+    <!-- Player controls -->
+    <string name="rewind">Назад</string>
+    <string name="forward">Вперёд</string>
+    <string name="next">Следующее</string>
+    <string name="previous">Предыдущее</string>
+
+    <!-- Clipboard -->
+    <string name="clipboard_empty">Буфер обмена пуст</string>
+
+    <!-- About dialog -->
+    <string name="about_description">Мощный загрузчик видео из Twitter/X для Android.</string>
+    <string name="about_features">Функции:</string>
+    <string name="about_feature_download">Скачивание видео из Twitter/X</string>
+    <string name="about_feature_quality">Несколько вариантов качества (SD/HD/2K/4K)</string>
+    <string name="about_feature_gif">Скачивание GIF</string>
+    <string name="about_feature_player">Встроенный видеоплеер</string>
+    <string name="about_feature_local">Управление локальными видео</string>
+
+    <!-- Language options -->
+    <string name="lang_english">English</string>
+    <string name="lang_chinese">中文（简体）</string>
+    <string name="lang_korean">한국어</string>
+    <string name="select_language">Выбрать язык</string>
+
+    <!-- Quality options -->
+    <string name="quality_best">Лучшее</string>
+    <string name="quality_4k">4K</string>
+    <string name="quality_2k">2K</string>
+    <string name="quality_hd">HD</string>
+    <string name="quality_sd">SD</string>
+
+    <!-- Online Player -->
+    <string name="online_player">Онлайн плеер</string>
+    <string name="nav_online">Онлайн</string>
+    <string name="hint_enter_video_url">Введите URL видео</string>
+    <string name="btn_play_online">Воспроизвести онлайн</string>
+    <string name="supported_formats_hint">Поддерживает MP4, M3U8, DASH, WebM и другие прямые ссылки на видео</string>
+    <string name="recent_play_history">Недавняя история</string>
+    <string name="empty_online_hint">Вставьте URL видео выше, чтобы начать</string>
+    <string name="error_invalid_url_general">Пожалуйста, введите корректную ссылку на видео</string>
+    <string name="clear_history_title">Очистить историю</string>
+    <string name="clear_history_message">Вы уверены, что хотите очистить всю историю воспроизведения?</string>
+
+    <!-- Messages -->
+    <string name="please_enter_url">Пожалуйста, введите ссылку</string>
+    <string name="download_completed">Загрузка завершена!</string>
+    <string name="cache_cleared">Кэш очищен</string>
+    <string name="cache_clear_failed">Не удалось очистить кэш</string>
+    <string name="opening_player">Открытие плеера…</string>
+    <string name="file_not_found">Файл не найден</string>
+
+    <!-- Format strings -->
+    <string name="version_format">Версия %1$s</string>
+    <string name="version_default">Версия 1.0.0</string>
+    <string name="about_content">Мощный загрузчик видео из Twitter/X для Android.\n\nФункции:\n• Скачивание видео из Twitter/X\n• Несколько вариантов качества (SD/HD/2K/4K)\n• Скачивание GIF\n• Встроенный видеоплеер\n• Управление локальными видео\n\nВерсия: %1$s</string>
+
+    <!-- Additional strings -->
+    <string name="video_details">Подробности</string>
+    <string name="error_format">Ошибка: %1$s</string>
+
+    <!-- Stream type -->
+    <string name="stream_hls">HLS (M3U8)</string>
+    <string name="stream_direct">Прямая ссылка MP4</string>
+    <string name="parsing_m3u8">Анализ плейлиста M3U8…</string>
+    <string name="downloading_video_stream">Загрузка видеопотока…</string>
+    <string name="downloading_audio_stream">Загрузка аудиопотока…</string>
+    <string name="merging_ffmpeg">Объединение аудио + видео (FFmpeg)…</string>
+</resources>

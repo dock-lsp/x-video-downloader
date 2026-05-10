@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">X 動画ダウンローダー</string>
+    <string name="app_description">Twitter/Xから動画をダウンロード</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">ホーム</string>
+    <string name="nav_downloads">ダウンロード</string>
+    <string name="nav_local">ローカル</string>
+    <string name="nav_settings">設定</string>
+
+    <!-- Home -->
+    <string name="hint_paste_url">Twitter/XのURLを貼り付け</string>
+    <string name="btn_paste">貼り付け</string>
+    <string name="btn_parse">解析</string>
+    <string name="btn_download">ダウンロード</string>
+    <string name="btn_play">再生</string>
+    <string name="btn_download_gif">GIFをダウンロード</string>
+    <string name="select_quality">画質を選択</string>
+    <string name="parsing">動画を解析中…</string>
+
+    <!-- Downloads -->
+    <string name="active_downloads">ダウンロード中</string>
+    <string name="history">履歴</string>
+    <string name="no_active_downloads">ダウンロード中のタスクなし</string>
+    <string name="no_download_history">ダウンロード履歴なし</string>
+
+    <!-- Local Videos -->
+    <string name="local_videos">ローカル動画</string>
+    <string name="no_local_videos">ローカル動画が見つかりません</string>
+    <string name="sort">並び替え</string>
+
+    <!-- Settings -->
+    <string name="settings">設定</string>
+    <string name="appearance">外観</string>
+    <string name="theme">テーマ</string>
+    <string name="theme_system">システム</string>
+    <string name="theme_light">ライト</string>
+    <string name="theme_dark">ダーク</string>
+    <string name="language">言語</string>
+    <string name="downloads_section">ダウンロード</string>
+    <string name="default_quality">デフォルト画質</string>
+    <string name="auto_play">動画を自動再生</string>
+    <string name="storage">ストレージ</string>
+    <string name="clear_cache">キャッシュをクリア</string>
+    <string name="about">アプリについて</string>
+    <string name="version">バージョン</string>
+
+    <!-- Player -->
+    <string name="speed">速度</string>
+    <string name="fullscreen">全画面</string>
+    <string name="lock">ロック</string>
+    <string name="unlock">ロック解除</string>
+
+    <!-- Errors -->
+    <string name="error">エラー</string>
+    <string name="error_invalid_url">有効なTwitter/XのURLを入力してください</string>
+    <string name="error_parse_failed">動画の解析に失敗しました</string>
+    <string name="error_download_failed">ダウンロードに失敗しました</string>
+    <string name="error_no_video">このTweetに動画が見つかりません</string>
+
+    <!-- Dialogs -->
+    <string name="clear_cache_title">キャッシュをクリア</string>
+    <string name="clear_cache_message">すべてのキャッシュデータが削除されます。続行しますか？</string>
+    <string name="clear">クリア</string>
+    <string name="cancel">キャンセル</string>
+    <string name="ok">OK</string>
+    <string name="confirm">確認</string>
+
+    <!-- Sort options -->
+    <string name="sort_date_newest">日付（新しい順）</string>
+    <string name="sort_date_oldest">日付（古い順）</string>
+    <string name="sort_size_largest">サイズ（大きい順）</string>
+    <string name="sort_size_smallest">サイズ（小さい順）</string>
+    <string name="sort_name_az">名前（A-Z）</string>
+    <string name="sort_name_za">名前（Z-A）</string>
+
+    <!-- Video details -->
+    <string name="video_name">名前</string>
+    <string name="video_path">パス</string>
+    <string name="video_size">サイズ</string>
+    <string name="video_duration">時間</string>
+    <string name="video_resolution">解像度</string>
+    <string name="unknown">不明</string>
+
+    <!-- Download states -->
+    <string name="downloading">ダウンロード中</string>
+    <string name="paused">一時停止</string>
+    <string name="completed">完了</string>
+    <string name="failed">失敗</string>
+
+    <!-- Share -->
+    <string name="share_video">動画を共有</string>
+
+    <!-- Permissions -->
+    <string name="permission_denied">一部の権限が拒否されました。一部の機能が正常に動作しない可能性があります。</string>
+
+    <!-- Player controls -->
+    <string name="rewind">巻き戻し</string>
+    <string name="forward">早送り</string>
+    <string name="next">次へ</string>
+    <string name="previous">前へ</string>
+
+    <!-- Clipboard -->
+    <string name="clipboard_empty">クリップボードは空です</string>
+
+    <!-- About dialog -->
+    <string name="about_description">強力なTwitter/X動画ダウンローダー</string>
+    <string name="about_features">機能：</string>
+    <string name="about_feature_download">Twitter/Xから動画をダウンロード</string>
+    <string name="about_feature_quality">複数の画質オプション（SD/HD/2K/4K）</string>
+    <string name="about_feature_gif">GIFのダウンロード</string>
+    <string name="about_feature_player">内置動画プレーヤー</string>
+    <string name="about_feature_local">ローカル動画管理</string>
+
+    <!-- Language options -->
+    <string name="lang_english">English</string>
+    <string name="lang_chinese">中文（简体）</string>
+    <string name="lang_korean">한국어</string>
+    <string name="select_language">言語を選択</string>
+
+    <!-- Quality options -->
+    <string name="quality_best">最高</string>
+    <string name="quality_4k">4K</string>
+    <string name="quality_2k">2K</string>
+    <string name="quality_hd">HD</string>
+    <string name="quality_sd">SD</string>
+
+    <!-- Online Player -->
+    <string name="online_player">オンラインプレーヤー</string>
+    <string name="nav_online">オンライン</string>
+    <string name="hint_enter_video_url">動画URLを入力</string>
+    <string name="btn_play_online">オンライン再生</string>
+    <string name="supported_formats_hint">MP4、M3U8、DASH、WebMなどの直接動画リンクをサポート</string>
+    <string name="recent_play_history">再生履歴</string>
+    <string name="empty_online_hint">上に動画URLを貼り付けて再生開始</string>
+    <string name="error_invalid_url_general">有効な動画URLを入力してください</string>
+    <string name="clear_history_title">履歴をクリア</string>
+    <string name="clear_history_message">すべての再生履歴をクリアしてもよろしいですか？</string>
+
+    <!-- Messages -->
+    <string name="please_enter_url">URLを入力してください</string>
+    <string name="download_completed">ダウンロード完了！</string>
+    <string name="cache_cleared">キャッシュをクリアしました</string>
+    <string name="cache_clear_failed">キャッシュのクリアに失敗しました</string>
+    <string name="opening_player">動画プレーヤーを開いています…</string>
+    <string name="file_not_found">ファイルが見つかりません</string>
+
+    <!-- Format strings -->
+    <string name="version_format">バージョン %1$s</string>
+    <string name="version_default">バージョン 1.0.0</string>
+    <string name="about_content">強力なTwitter/X動画ダウンローダー。\n\n機能：\n• Twitter/Xから動画をダウンロード\n• 複数の画質オプション（SD/HD/2K/4K）\n• GIFのダウンロード\n• 内蔵動画プレーヤー\n• ローカル動画管理\n\nバージョン：%1$s</string>
+
+    <!-- Additional strings -->
+    <string name="video_details">詳細</string>
+    <string name="error_format">エラー：%1$s</string>
+
+    <!-- Stream type -->
+    <string name="stream_hls">HLS (M3U8)</string>
+    <string name="stream_direct">直接MP4</string>
+    <string name="parsing_m3u8">M3U8プレイリストを解析中…</string>
+    <string name="downloading_video_stream">動画ストリームをダウンロード中…</string>
+    <string name="downloading_audio_stream">音声ストリームをダウンロード中…</string>
+    <string name="merging_ffmpeg">音声と動画をマージ中 (FFmpeg)…</string>
+</resources>

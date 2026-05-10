@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">X Video Downloader</string>
+    <string name="app_description">Videos von Twitter/X herunterladen</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Startseite</string>
+    <string name="nav_downloads">Downloads</string>
+    <string name="nav_local">Lokal</string>
+    <string name="nav_settings">Einstellungen</string>
+
+    <!-- Home -->
+    <string name="hint_paste_url">Twitter/X-URL einfügen</string>
+    <string name="btn_paste">Einfügen</string>
+    <string name="btn_parse">Analysieren</string>
+    <string name="btn_download">Herunterladen</string>
+    <string name="btn_play">Abspielen</string>
+    <string name="btn_download_gif">GIF herunterladen</string>
+    <string name="select_quality">Qualität auswählen</string>
+    <string name="parsing">Video wird analysiert…</string>
+
+    <!-- Downloads -->
+    <string name="active_downloads">Aktive Downloads</string>
+    <string name="history">Verlauf</string>
+    <string name="no_active_downloads">Keine aktiven Downloads</string>
+    <string name="no_download_history">Kein Download-Verlauf</string>
+
+    <!-- Local Videos -->
+    <string name="local_videos">Lokale Videos</string>
+    <string name="no_local_videos">Keine lokalen Videos gefunden</string>
+    <string name="sort">Sortieren</string>
+
+    <!-- Settings -->
+    <string name="settings">Einstellungen</string>
+    <string name="appearance">Erscheinungsbild</string>
+    <string name="theme">Design</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Hell</string>
+    <string name="theme_dark">Dunkel</string>
+    <string name="language">Sprache</string>
+    <string name="downloads_section">Downloads</string>
+    <string name="default_quality">Standardqualität</string>
+    <string name="auto_play">Videos automatisch abspielen</string>
+    <string name="storage">Speicher</string>
+    <string name="clear_cache">Cache leeren</string>
+    <string name="about">Über</string>
+    <string name="version">Version</string>
+
+    <!-- Player -->
+    <string name="speed">Geschwindigkeit</string>
+    <string name="fullscreen">Vollbild</string>
+    <string name="lock">Sperren</string>
+    <string name="unlock">Entsperren</string>
+
+    <!-- Errors -->
+    <string name="error">Fehler</string>
+    <string name="error_invalid_url">Bitte geben Sie eine gültige Twitter/X-URL ein</string>
+    <string name="error_parse_failed">Videoanalyse fehlgeschlagen</string>
+    <string name="error_download_failed">Download fehlgeschlagen</string>
+    <string name="error_no_video">Kein Video in diesem Tweet gefunden</string>
+
+    <!-- Dialogs -->
+    <string name="clear_cache_title">Cache leeren</string>
+    <string name="clear_cache_message">Alle zwischengespeicherten Daten werden gelöscht. Fortfahren?</string>
+    <string name="clear">Leeren</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="ok">OK</string>
+    <string name="confirm">Bestätigen</string>
+
+    <!-- Sort options -->
+    <string name="sort_date_newest">Datum (Neueste)</string>
+    <string name="sort_date_oldest">Datum (Älteste)</string>
+    <string name="sort_size_largest">Größe (Größte)</string>
+    <string name="sort_size_smallest">Größe (Kleinste)</string>
+    <string name="sort_name_az">Name (A-Z)</string>
+    <string name="sort_name_za">Name (Z-A)</string>
+
+    <!-- Video details -->
+    <string name="video_name">Name</string>
+    <string name="video_path">Pfad</string>
+    <string name="video_size">Größe</string>
+    <string name="video_duration">Dauer</string>
+    <string name="video_resolution">Auflösung</string>
+    <string name="unknown">Unbekannt</string>
+
+    <!-- Download states -->
+    <string name="downloading">Wird heruntergeladen</string>
+    <string name="paused">Pausiert</string>
+    <string name="completed">Abgeschlossen</string>
+    <string name="failed">Fehlgeschlagen</string>
+
+    <!-- Share -->
+    <string name="share_video">Video teilen</string>
+
+    <!-- Permissions -->
+    <string name="permission_denied">Einige Berechtigungen wurden verweigert. Einige Funktionen funktionieren möglicherweise nicht ordnungsgemäß.</string>
+
+    <!-- Player controls -->
+    <string name="rewind">Zurückspulen</string>
+    <string name="forward">Vorspulen</string>
+    <string name="next">Weiter</string>
+    <string name="previous">Zurück</string>
+
+    <!-- Clipboard -->
+    <string name="clipboard_empty">Zwischenablage ist leer</string>
+
+    <!-- About dialog -->
+    <string name="about_description">Ein leistungsstarker Twitter/X-Video-Downloader für Android.</string>
+    <string name="about_features">Funktionen:</string>
+    <string name="about_feature_download">Videos von Twitter/X herunterladen</string>
+    <string name="about_feature_quality">Mehrere Qualitätsoptionen (SD/HD/2K/4K)</string>
+    <string name="about_feature_gif">GIFs herunterladen</string>
+    <string name="about_feature_player">Integrierter Videoplayer</string>
+    <string name="about_feature_local">Lokale Videoverwaltung</string>
+
+    <!-- Language options -->
+    <string name="lang_english">English</string>
+    <string name="lang_chinese">中文（简体）</string>
+    <string name="lang_korean">한국어</string>
+    <string name="select_language">Sprache auswählen</string>
+
+    <!-- Quality options -->
+    <string name="quality_best">Beste</string>
+    <string name="quality_4k">4K</string>
+    <string name="quality_2k">2K</string>
+    <string name="quality_hd">HD</string>
+    <string name="quality_sd">SD</string>
+
+    <!-- Online Player -->
+    <string name="online_player">Online-Player</string>
+    <string name="nav_online">Online</string>
+    <string name="hint_enter_video_url">Video-URL eingeben</string>
+    <string name="btn_play_online">Online abspielen</string>
+    <string name="supported_formats_hint">Unterstützt MP4, M3U8, DASH, WebM und andere direkte Video-Links</string>
+    <string name="recent_play_history">Letzter Verlauf</string>
+    <string name="empty_online_hint">Fügen Sie oben eine Video-URL ein, um zu beginnen</string>
+    <string name="error_invalid_url_general">Bitte geben Sie eine gültige Video-URL ein</string>
+    <string name="clear_history_title">Verlauf löschen</string>
+    <string name="clear_history_message">Sind Sie sicher, dass Sie den gesamten Wiedergabeverlauf löschen möchten?</string>
+
+    <!-- Messages -->
+    <string name="please_enter_url">Bitte geben Sie eine URL ein</string>
+    <string name="download_completed">Download abgeschlossen!</string>
+    <string name="cache_cleared">Cache geleert</string>
+    <string name="cache_clear_failed">Cache leeren fehlgeschlagen</string>
+    <string name="opening_player">Player wird geöffnet…</string>
+    <string name="file_not_found">Datei nicht gefunden</string>
+
+    <!-- Format strings -->
+    <string name="version_format">Version %1$s</string>
+    <string name="version_default">Version 1.0.0</string>
+    <string name="about_content">Ein leistungsstarker Twitter/X-Video-Downloader für Android.\n\nFunktionen:\n• Videos von Twitter/X herunterladen\n• Mehrere Qualitätsoptionen (SD/HD/2K/4K)\n• GIFs herunterladen\n• Integrierter Videoplayer\n• Lokale Videoverwaltung\n\nVersion: %1$s</string>
+
+    <!-- Additional strings -->
+    <string name="video_details">Details</string>
+    <string name="error_format">Fehler: %1$s</string>
+
+    <!-- Stream type -->
+    <string name="stream_hls">HLS (M3U8)</string>
+    <string name="stream_direct">Direktes MP4</string>
+    <string name="parsing_m3u8">M3U8-Playlist wird analysiert…</string>
+    <string name="downloading_video_stream">Videostream wird heruntergeladen…</string>
+    <string name="downloading_audio_stream">Audiostream wird heruntergeladen…</string>
+    <string name="merging_ffmpeg">Audio + Video wird zusammengeführt (FFmpeg)…</string>
+</resources>

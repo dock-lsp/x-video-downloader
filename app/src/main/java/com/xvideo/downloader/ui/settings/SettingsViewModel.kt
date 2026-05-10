@@ -83,11 +83,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         prefs.edit().putString("app_language", language).apply()
         _appLanguage.value = language
         
-        // Set the app locale
         val localeList = when (language) {
             LANG_ENGLISH -> LocaleListCompat.forLanguageTags("en")
             LANG_CHINESE -> LocaleListCompat.forLanguageTags("zh")
             LANG_KOREAN -> LocaleListCompat.forLanguageTags("ko")
+            LANG_JAPANESE -> LocaleListCompat.forLanguageTags("ja")
+            LANG_SPANISH -> LocaleListCompat.forLanguageTags("es")
+            LANG_FRENCH -> LocaleListCompat.forLanguageTags("fr")
+            LANG_GERMAN -> LocaleListCompat.forLanguageTags("de")
+            LANG_RUSSIAN -> LocaleListCompat.forLanguageTags("ru")
+            LANG_ARABIC -> LocaleListCompat.forLanguageTags("ar")
             else -> LocaleListCompat.getEmptyLocaleList()
         }
         AppCompatDelegate.setApplicationLocales(localeList)
@@ -127,8 +132,22 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         const val LANG_ENGLISH = "en"
         const val LANG_CHINESE = "zh"
         const val LANG_KOREAN = "ko"
+        const val LANG_JAPANESE = "ja"
+        const val LANG_SPANISH = "es"
+        const val LANG_FRENCH = "fr"
+        const val LANG_GERMAN = "de"
+        const val LANG_RUSSIAN = "ru"
+        const val LANG_ARABIC = "ar"
         
-        val LANGUAGE_OPTIONS = listOf("System Default", "English", "中文（简体）", "한국어")
-        val LANGUAGE_VALUES = listOf(LANG_SYSTEM, LANG_ENGLISH, LANG_CHINESE, LANG_KOREAN)
+        val LANGUAGE_OPTIONS = listOf(
+            "System Default", "English", "中文（简体）", "한국어",
+            "日本語", "Español", "Français", "Deutsch",
+            "Русский", "العربية"
+        )
+        val LANGUAGE_VALUES = listOf(
+            LANG_SYSTEM, LANG_ENGLISH, LANG_CHINESE, LANG_KOREAN,
+            LANG_JAPANESE, LANG_SPANISH, LANG_FRENCH, LANG_GERMAN,
+            LANG_RUSSIAN, LANG_ARABIC
+        )
     }
 }
