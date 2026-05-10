@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.*
 import android.widget.PopupMenu
 import androidx.activity.viewModels
@@ -38,6 +40,18 @@ class PlayerActivity : AppCompatActivity() {
     private var playWhenReady = true
     private var currentPosition = 0L
     private var playbackPosition = 0L
+
+    private val updateHandler = Handler(Looper.getMainLooper())
+    private val updateRunnable = object : Runnable {
+        override fun run() {
+            player?.let {
+                binding.tvCurrentTime.text = FileUtils.formatDuration(it.currentPosition)
+                binding.seekBar.progress = it.currentPosition.toInt()
+                viewModel.updatePosition(it.currentPosition)
+            }
+            updateHandler.postDelayed(this, 500)
+        }
+    }
 
     // Gesture detection
     private var gestureDetector: GestureDetector? = null
@@ -141,20 +155,11 @@ class PlayerActivity : AppCompatActivity() {
     private fun setupGestures() {
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-                if (viewModel.isLocked.value) {
-                    // When locked, only toggle unlock button visibility
-                    toggleControls()
-                    return true
-                }
                 toggleControls()
                 return true
             }
 
             override fun onDoubleTap(e: MotionEvent): Boolean {
-                if (viewModel.isLocked.value) {
-                    // When locked, skip double-tap seek
-                    return true
-                }
                 player?.let {
                     val screenWidth = binding.playerView.width
                     if (e.x < screenWidth / 2) {
@@ -173,8 +178,7 @@ class PlayerActivity : AppCompatActivity() {
 
         binding.playerView.setOnTouchListener { _, event ->
             if (viewModel.isLocked.value) {
-                // When locked, let gesture detector handle single tap to toggle unlock button
-                gestureDetector?.onTouchEvent(event)
+                binding.btnUnlock.visibility = View.VISIBLE
                 return@setOnTouchListener true
             }
 
@@ -229,14 +233,11 @@ class PlayerActivity : AppCompatActivity() {
             true
         }
 
-        // Unlock button click handler
-        binding.btnUnlock.setOnClickListener {
+        // Lock touch listener
+        binding.btnUnlock.setOnTouchListener { _, event ->
             viewModel.unlock()
             binding.btnUnlock.visibility = View.GONE
-            // Show controls after unlocking
-            binding.controlsOverlay.visibility = View.VISIBLE
-            binding.topControls.visibility = View.VISIBLE
-            binding.btnLock.visibility = View.VISIBLE
+            true
         }
     }
 
@@ -266,16 +267,13 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun toggleControls() {
         if (viewModel.isLocked.value) {
-            // When locked, toggle unlock button visibility
-            val unlockVisible = binding.btnUnlock.visibility == View.VISIBLE
-            binding.btnUnlock.visibility = if (unlockVisible) View.GONE else View.VISIBLE
+            binding.btnUnlock.visibility = View.VISIBLE
             return
         }
 
         val isVisible = binding.controlsOverlay.visibility == View.VISIBLE
         binding.controlsOverlay.visibility = if (isVisible) View.GONE else View.VISIBLE
         binding.topControls.visibility = if (isVisible) View.GONE else View.VISIBLE
-        binding.btnLock.visibility = if (isVisible) View.GONE else View.VISIBLE
     }
 
     private fun showSeekFeedback(delta: Long) {
@@ -308,9 +306,7 @@ class PlayerActivity : AppCompatActivity() {
                 launch {
                     viewModel.isLocked.collectLatest { isLocked ->
                         binding.controlsOverlay.visibility = if (isLocked) View.GONE else View.VISIBLE
-                        // Lock button: show when controls visible and not locked
-                        binding.btnLock.visibility = View.GONE
-                        // Unlock button: hide when not locked (will show on tap)
+                        binding.btnLock.visibility = if (isLocked) View.GONE else View.VISIBLE
                         binding.btnUnlock.visibility = if (isLocked) View.VISIBLE else View.GONE
                     }
                 }
@@ -385,20 +381,11 @@ class PlayerActivity : AppCompatActivity() {
             })
         }
 
-        lifecycleScope.launch {
-            while (true) {
-                player?.let {
-                    binding.tvCurrentTime.text = FileUtils.formatDuration(it.currentPosition)
-                    binding.seekBar.progress = it.currentPosition.toInt()
-                    viewModel.updatePosition(it.currentPosition)
-                }
-                kotlinx.coroutines.delay(500)
-            }
-        }
+        updateHandler.post(updateRunnable)
     }
 
     private fun releasePlayer() {
-        // Coroutine-based update is cancelled when lifecycleScope is cancelled (onStop)
+        updateHandler.removeCallbacks(updateRunnable)
         player?.let {
             playbackPosition = it.currentPosition
             playWhenReady = it.playWhenReady

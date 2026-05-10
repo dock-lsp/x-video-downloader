@@ -82,7 +82,6 @@ class DownloadsFragment : Fragment() {
         }
 
         binding.swipeRefresh.setOnRefreshListener {
-            viewModel.refresh()
             binding.swipeRefresh.isRefreshing = false
         }
     }

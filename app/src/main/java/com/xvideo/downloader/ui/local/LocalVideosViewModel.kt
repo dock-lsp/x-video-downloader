@@ -42,7 +42,7 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
                 }
                 _videos.value = sortVideos(videoList, _sortOrder.value)
             } catch (e: Exception) {
-                _toastMessage.emit("加载视频失败: ${e.message}")
+                _toastMessage.emit("Error loading videos: ${e.message}")
             } finally {
                 _isLoading.value = false
             }
@@ -64,15 +64,14 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
             MediaStore.Video.Media.HEIGHT
         )
 
-        // Filter out .ts segment files from MediaStore query
-        val selection = "${MediaStore.Video.Media.DISPLAY_NAME} NOT LIKE ?"
-        val selectionArgs = arrayOf("%.ts")
+        val selection = "${MediaStore.Video.Media.DATA} LIKE ?"
+        val selectionArgs = arrayOf("%XVideoDownloader%")
 
         context.contentResolver.query(
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
             projection,
-            selection,
-            selectionArgs,
+            null,
+            null,
             "${MediaStore.Video.Media.DATE_ADDED} DESC"
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
@@ -118,14 +117,14 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
         // Also scan app-specific directory
         scanAppDirectory(videos)
 
-        return videos.take(500)
+        return videos
     }
 
     private fun scanAppDirectory(videos: MutableList<LocalVideo>) {
         val context = getApplication<Application>()
         val downloadDir = com.xvideo.downloader.util.FileUtils.getVideoDirectory(context)
 
-        downloadDir.listFiles()?.filter { it.isFile && it.extension == "mp4" && !it.name.endsWith(".ts", ignoreCase = true) }?.forEach { file ->
+        downloadDir.listFiles()?.filter { it.isFile && it.extension == "mp4" }?.forEach { file ->
             // Check if already in list
             if (videos.none { it.path == file.absolutePath }) {
                 videos.add(
@@ -169,9 +168,9 @@ class LocalVideosViewModel(application: Application) : AndroidViewModel(applicat
                 }
                 if (deleted) {
                     _videos.value = _videos.value.filter { it.id != video.id }
-                    _toastMessage.emit("视频已删除")
+                    _toastMessage.emit("Video deleted")
                 } else {
-                    _toastMessage.emit("删除失败")
+                    _toastMessage.emit("Failed to delete video")
                 }
             } catch (e: Exception) {
                 _toastMessage.emit("Error: ${e.message}")
