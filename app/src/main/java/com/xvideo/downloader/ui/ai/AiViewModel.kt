@@ -16,96 +16,70 @@ import java.util.UUID
 
 class AiViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val aiApiService = runCatching {
-        AiApiService.getInstance()
-    }.onFailure { e ->
-        Log.e(TAG, "Failed to initialize AiApiService", e)
-        null
-    }.getOrNull()
+    private val aiApiService = AiApiService.getInstance()
+    private val codeGenRepo = CodeGenerationRepository.getInstance(application)
+    private val database = App.getInstance().database
+    private val conversationDao = database?.aiConversationDao()
+    private val messageDao = database?.aiMessageDao()
+    private val projectDao = database?.generatedProjectDao()
 
-    private val codeGenRepo = runCatching {
-        CodeGenerationRepository.getInstance(application)
-    }.onFailure { e ->
-        Log.e(TAG, "Failed to initialize CodeGenerationRepository", e)
-        null
-    }.getOrNull()
+    companion object {
+        private const val TAG = "AiViewModel"
+    }
 
-    private val database = runCatching {
-        App.getInstance().database
-    }.onFailure { e ->
-        Log.e(TAG, "Failed to get database", e)
-        null
-    }.getOrNull()
-
-    private val conversationDao = runCatching {
-        database?.aiConversationDao()
-    }.onFailure { e ->
-        Log.e(TAG, "Failed to get AiConversationDao", e)
-        null
-    }.getOrNull()
-
-    private val messageDao = runCatching {
-        database?.aiMessageDao()
-    }.onFailure { e ->
-        Log.e(TAG, "Failed to get AiMessageDao", e)
-        null
-    }.getOrNull()
-
-    private val projectDao = runCatching {
-        database?.generatedProjectDao()
-    }.onFailure { e ->
-        Log.e(TAG, "Failed to get GeneratedProjectDao", e)
-        null
-    }.getOrNull()
-
+    // Current conversation
     private val _currentConversationId = MutableStateFlow<String?>(null)
     val currentConversationId: StateFlow<String?> = _currentConversationId.asStateFlow()
 
+    // Messages in current conversation
     private val _messages = MutableStateFlow<List<AiMessageEntity>>(emptyList())
     val messages: StateFlow<List<AiMessageEntity>> = _messages.asStateFlow()
 
+    // All conversations (history)
     val conversations: StateFlow<List<AiConversationEntity>> =
         conversationDao?.getAllConversations()
             ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
             ?: MutableStateFlow(emptyList())
 
+    // Generated projects
     val projects: StateFlow<List<GeneratedProjectEntity>> =
         projectDao?.getAllProjects()
             ?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
             ?: MutableStateFlow(emptyList())
 
+    // Loading state
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    // Error messages
     private val _errorMessage = MutableSharedFlow<String>()
     val errorMessage: SharedFlow<String> = _errorMessage.asSharedFlow()
 
+    // Status messages
     private val _statusMessage = MutableSharedFlow<String>()
     val statusMessage: SharedFlow<String> = _statusMessage.asSharedFlow()
 
     init {
         if (database == null) {
-            Log.w(TAG, "Database not available - AI features may not work")
+            Log.e(TAG, "Database not available")
         }
+        // Auto-load the most recent conversation
         viewModelScope.launch {
-            runCatching {
+            try {
                 val convos = conversationDao?.getAllConversations()?.first()
                 if (!convos.isNullOrEmpty()) {
                     loadConversation(convos.first().id)
                 }
-            }.onFailure { e ->
+            } catch (e: Exception) {
                 Log.e(TAG, "Failed to auto-load conversation", e)
             }
         }
     }
 
     fun newConversation() {
-        val dao = conversationDao ?: run {
-            viewModelScope.launch { _errorMessage.emit("数据库未初始化") }
-            return
-        }
+        val dao = conversationDao ?: return
         viewModelScope.launch {
-            runCatching {
+            try {
                 val conversation = AiConversationEntity(
                     id = UUID.randomUUID().toString(),
                     title = "新对话"
@@ -113,7 +87,7 @@ class AiViewModel(application: Application) : AndroidViewModel(application) {
                 dao.insert(conversation)
                 _currentConversationId.value = conversation.id
                 _messages.value = emptyList()
-            }.onFailure { e ->
+            } catch (e: Exception) {
                 Log.e(TAG, "Failed to create conversation", e)
                 _errorMessage.emit("创建对话失败: ${e.message}")
             }
@@ -121,16 +95,13 @@ class AiViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun loadConversation(conversationId: String) {
-        val dao = messageDao ?: run {
-            viewModelScope.launch { _errorMessage.emit("数据库未初始化") }
-            return
-        }
+        val dao = messageDao ?: return
         viewModelScope.launch {
-            runCatching {
+            try {
                 _currentConversationId.value = conversationId
                 val msgs = dao.getMessagesList(conversationId)
                 _messages.value = msgs
-            }.onFailure { e ->
+            } catch (e: Exception) {
                 Log.e(TAG, "Failed to load conversation", e)
                 _errorMessage.emit("加载对话失败: ${e.message}")
             }
@@ -139,14 +110,14 @@ class AiViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteConversation(conversationId: String) {
         viewModelScope.launch {
-            runCatching {
+            try {
                 messageDao?.deleteByConversation(conversationId)
                 conversationDao?.deleteById(conversationId)
                 if (_currentConversationId.value == conversationId) {
                     _currentConversationId.value = null
                     _messages.value = emptyList()
                 }
-            }.onFailure { e ->
+            } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete conversation", e)
                 _errorMessage.emit("删除对话失败: ${e.message}")
             }
@@ -160,10 +131,6 @@ class AiViewModel(application: Application) : AndroidViewModel(application) {
             viewModelScope.launch { _errorMessage.emit("数据库未初始化") }
             return
         }
-        if (aiApiService == null) {
-            viewModelScope.launch { _errorMessage.emit("AI 服务未初始化") }
-            return
-        }
 
         viewModelScope.launch {
             val convId = _currentConversationId.value ?: run {
@@ -171,13 +138,12 @@ class AiViewModel(application: Application) : AndroidViewModel(application) {
                     id = UUID.randomUUID().toString(),
                     title = content.take(50).replace("\n", " ")
                 )
-                runCatching { conversationDao.insert(conversation) }
-                    .onFailure { e -> Log.e(TAG, "Failed to create conversation", e) }
+                conversationDao.insert(conversation)
                 _currentConversationId.value = conversation.id
                 conversation.id
             }
 
-            runCatching {
+            try {
                 val userMessage = AiMessageEntity(
                     id = UUID.randomUUID().toString(),
                     conversationId = convId,
@@ -191,19 +157,18 @@ class AiViewModel(application: Application) : AndroidViewModel(application) {
                 if (msgCount == 1) {
                     val title = content.take(50).replace("\n", " ")
                     val existing = conversationDao.getById(convId)
-                    existing?.let {
-                        conversationDao.update(it.copy(title = title, updatedAt = System.currentTimeMillis()))
+                    if (existing != null) {
+                        conversationDao.update(existing.copy(title = title, updatedAt = System.currentTimeMillis()))
                     }
                 }
 
-                val contextMessages = _messages.value.map { it.role to it.content }
+                val context = _messages.value.map { it.role to it.content }
                 _isLoading.value = true
 
-                val result = aiApiService.chat(contextMessages)
+                val result = aiApiService.chat(context)
                 result.fold(
                     onSuccess = { response ->
-                        val codeResult = codeGenRepo?.parseAndCreateFiles(response, conversationId = convId)
-                            ?: CodeGenerationRepository.CodeGenResult(emptyList(), null, "CodeGenRepo not available")
+                        val codeResult = codeGenRepo.parseAndCreateFiles(response, conversationId = convId)
                         val hasCode = codeResult.createdFiles.isNotEmpty()
 
                         val aiMessage = AiMessageEntity(
@@ -219,8 +184,8 @@ class AiViewModel(application: Application) : AndroidViewModel(application) {
 
                         conversationDao.updateMessageCount(convId, _messages.value.size)
 
-                        codeResult.project?.let { project ->
-                            projectDao?.insert(project)
+                        if (codeResult.project != null) {
+                            projectDao?.insert(codeResult.project)
                             _statusMessage.emit("✅ ${codeResult.message}")
                         }
                     },
@@ -229,23 +194,23 @@ class AiViewModel(application: Application) : AndroidViewModel(application) {
                         _errorMessage.emit(error.message ?: "AI 请求失败")
                     }
                 )
-            }.onFailure { e ->
+            } catch (e: Exception) {
                 Log.e(TAG, "Send message failed", e)
                 _errorMessage.emit("发送失败: ${e.message}")
-            }.also {
+            } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    fun isConfigured(): Boolean = aiApiService?.isConfigured() ?: false
+    fun isConfigured(): Boolean = aiApiService.isConfigured()
 
     fun deleteProject(project: GeneratedProjectEntity) {
         viewModelScope.launch {
-            runCatching {
-                codeGenRepo?.deleteProject(project.directoryPath)
+            try {
+                codeGenRepo.deleteProject(project.directoryPath)
                 projectDao?.deleteById(project.id)
-            }.onFailure { e ->
+            } catch (e: Exception) {
                 Log.e(TAG, "Failed to delete project", e)
                 _errorMessage.emit("删除项目失败: ${e.message}")
             }
@@ -253,28 +218,19 @@ class AiViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getProjectFiles(projectDir: String): List<CodeGenerationRepository.ProjectFile> {
-        return codeGenRepo?.listProjectFiles(projectDir) ?: emptyList()
+        return codeGenRepo.listProjectFiles(projectDir)
     }
 
     fun readProjectFile(filePath: String): String? {
-        return codeGenRepo?.readFile(filePath)
+        return codeGenRepo.readFile(filePath)
     }
 
     fun saveFileContent(filePath: String, content: String) {
         viewModelScope.launch {
-            val success = codeGenRepo?.saveFile(filePath, content) ?: false
+            val success = codeGenRepo.saveFile(filePath, content)
             if (success) {
                 _statusMessage.emit("💾 已保存")
             }
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        Log.d(TAG, "AiViewModel cleared")
-    }
-
-    companion object {
-        private const val TAG = "AiViewModel"
     }
 }
