@@ -86,10 +86,13 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun setupUI() {
         binding.btnBack.setOnClickListener {
-            finish()
+            if (!isLocked) {
+                finish()
+            }
         }
 
         binding.btnPlayPause.setOnClickListener {
+            if (isLocked) return@setOnClickListener
             player?.let {
                 if (it.isPlaying) {
                     it.pause()
@@ -100,10 +103,12 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         binding.btnSpeed.setOnClickListener { view ->
+            if (isLocked) return@setOnClickListener
             showSpeedMenu(view)
         }
 
         binding.btnFullscreen.setOnClickListener {
+            if (isLocked) return@setOnClickListener
             toggleFullscreen()
         }
 
@@ -262,12 +267,13 @@ class PlayerActivity : AppCompatActivity() {
         isLocked = !isLocked
         if (isLocked) {
             binding.btnLock.setImageResource(R.drawable.ic_lock)
-            binding.btnUnlock.visibility = View.GONE
+            binding.unlockContainer.visibility = View.GONE
             binding.controlsOverlay.visibility = View.GONE
             binding.topControls.visibility = View.GONE
             controlsHideHandler.removeCallbacks(controlsHideRunnable)
         } else {
             binding.btnLock.setImageResource(R.drawable.ic_lock_open)
+            binding.unlockContainer.visibility = View.GONE
             binding.controlsOverlay.visibility = View.VISIBLE
             binding.topControls.visibility = View.VISIBLE
             scheduleControlsHide()
@@ -277,7 +283,7 @@ class PlayerActivity : AppCompatActivity() {
     private fun unlock() {
         isLocked = false
         binding.btnLock.setImageResource(R.drawable.ic_lock_open)
-        binding.btnUnlock.visibility = View.GONE
+        binding.unlockContainer.visibility = View.GONE
         binding.controlsOverlay.visibility = View.VISIBLE
         binding.topControls.visibility = View.VISIBLE
         scheduleControlsHide()
@@ -351,11 +357,11 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun onTapToShowControls() {
         if (isLocked) {
-            binding.btnUnlock.visibility = View.VISIBLE
+            binding.unlockContainer.visibility = View.VISIBLE
             controlsHideHandler.removeCallbacks(controlsHideRunnable)
             controlsHideHandler.postDelayed({
-                binding.btnUnlock.visibility = View.GONE
-            }, 2000)
+                binding.unlockContainer.visibility = View.GONE
+            }, 3000)
         } else {
             binding.controlsOverlay.visibility = View.VISIBLE
             binding.topControls.visibility = View.VISIBLE

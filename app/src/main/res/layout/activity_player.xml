@@ -194,18 +194,26 @@
 
     </LinearLayout>
 
-    <!-- Unlock Button (shown when locked) -->
-    <ImageButton
-        android:id="@+id/btnUnlock"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:layout_gravity="center"
-        android:background="@drawable/bg_circle_translucent"
-        android:src="@drawable/ic_lock_open"
-        android:visibility="gone"
-        android:contentDescription="Unlock"
-        app:tint="@android:color/white"
-        tools:visibility="visible" />
+    <!-- Unlock Button (shown when locked - top right corner) -->
+    <FrameLayout
+        android:id="@+id/unlockContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="24dp"
+        android:visibility="gone">
+
+        <ImageButton
+            android:id="@+id/btnUnlock"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:background="@drawable/bg_circle_solid"
+            android:src="@drawable/ic_lock_open"
+            android:scaleType="center"
+            android:contentDescription="Unlock"
+            app:tint="@android:color/white" />
+
+    </FrameLayout>
 
     <!-- Volume Indicator -->
     <ProgressBar
