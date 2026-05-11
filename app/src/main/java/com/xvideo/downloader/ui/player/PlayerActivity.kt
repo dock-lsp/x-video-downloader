@@ -173,15 +173,14 @@ class PlayerActivity : AppCompatActivity() {
         })
 
         binding.playerView.setOnTouchListener { _, event ->
-            if (isLocked && event.action != MotionEvent.ACTION_DOWN) {
+            if (isLocked) {
+                if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+                    gestureDetector?.onTouchEvent(event)
+                }
                 return@setOnTouchListener true
             }
             
             gestureDetector?.onTouchEvent(event)
-
-            if (isLocked) {
-                return@setOnTouchListener true
-            }
 
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
