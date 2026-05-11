@@ -7,7 +7,6 @@
     android:layout_height="match_parent"
     android:background="?attr/colorSurface">
 
-    <!-- Header -->
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
@@ -20,7 +19,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- URL Input Card -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardInput"
         android:layout_width="match_parent"
@@ -57,42 +55,43 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <LinearLayout
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPaste"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:orientation="horizontal">
+                android:text="@string/btn_paste"
+                app:icon="@drawable/ic_paste"
+                style="@style/Widget.Material3.Button.TonalButton" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnPaste"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    android:text="@string/btn_paste"
-                    app:icon="@drawable/ic_paste"
-                    style="@style/Widget.Material3.Button.OutlinedButton" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPlay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/btn_play_online"
+                app:icon="@drawable/ic_play"
+                app:iconGravity="textStart" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnPlay"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    android:text="@string/btn_play_online"
-                    app:icon="@drawable/ic_play" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDownload"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/btn_download"
+                app:icon="@drawable/ic_download"
+                app:iconGravity="textStart"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnDownload"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/btn_download"
-                    app:icon="@drawable/ic_download" />
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progressDetecting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:indeterminate="true"
+                android:visibility="gone"
+                tools:visibility="visible" />
 
-            </LinearLayout>
-
-            <!-- Supported formats hint -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -105,7 +104,6 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Detected Video Formats Section -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardDetectedFormats"
         android:layout_width="match_parent"
@@ -141,7 +139,6 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Recent History Section -->
     <LinearLayout
         android:id="@+id/layoutRecentHistory"
         android:layout_width="match_parent"
@@ -155,7 +152,6 @@
         app:layout_constraintTop_toBottomOf="@id/cardDetectedFormats"
         tools:visibility="visible">
 
-        <!-- Collapsible Header -->
         <LinearLayout
             android:id="@+id/layoutHistoryHeader"
             android:layout_width="match_parent"
@@ -191,7 +187,6 @@
 
         </LinearLayout>
 
-        <!-- Collapsible Content -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvRecentUrls"
             android:layout_width="match_parent"
@@ -202,7 +197,6 @@
 
     </LinearLayout>
 
-    <!-- Empty state when no history -->
     <LinearLayout
         android:id="@+id/layoutEmpty"
         android:layout_width="match_parent"

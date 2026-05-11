@@ -131,6 +131,9 @@ class OnlinePlayerFragment : Fragment() {
 
     private fun detectVideoFormats(url: String) {
         currentUrl = url
+        binding.progressDetecting.visibility = View.VISIBLE
+        binding.cardDetectedFormats.visibility = View.GONE
+
         val formats = mutableListOf<VideoFormat>()
 
         val extension = url.substringAfterLast(".", "").lowercase()
@@ -172,6 +175,8 @@ class OnlinePlayerFragment : Fragment() {
                 format = "M3U8"
             ))
         }
+
+        binding.progressDetecting.visibility = View.GONE
 
         if (formats.isNotEmpty()) {
             binding.cardDetectedFormats.visibility = View.VISIBLE
