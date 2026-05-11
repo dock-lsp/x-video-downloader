@@ -116,7 +116,7 @@ class PlayerActivity : AppCompatActivity() {
             toggleLock()
         }
 
-        binding.btnUnlock.setOnClickListener {
+        binding.btnVideoLock.setOnClickListener {
             unlock()
         }
 
@@ -267,13 +267,13 @@ class PlayerActivity : AppCompatActivity() {
         isLocked = !isLocked
         if (isLocked) {
             binding.btnLock.setImageResource(R.drawable.ic_lock)
-            binding.unlockContainer.visibility = View.GONE
+            binding.lockContainer.visibility = View.VISIBLE
             binding.controlsOverlay.visibility = View.GONE
             binding.topControls.visibility = View.GONE
             controlsHideHandler.removeCallbacks(controlsHideRunnable)
         } else {
             binding.btnLock.setImageResource(R.drawable.ic_lock_open)
-            binding.unlockContainer.visibility = View.GONE
+            binding.lockContainer.visibility = View.GONE
             binding.controlsOverlay.visibility = View.VISIBLE
             binding.topControls.visibility = View.VISIBLE
             scheduleControlsHide()
@@ -283,7 +283,7 @@ class PlayerActivity : AppCompatActivity() {
     private fun unlock() {
         isLocked = false
         binding.btnLock.setImageResource(R.drawable.ic_lock_open)
-        binding.unlockContainer.visibility = View.GONE
+        binding.lockContainer.visibility = View.GONE
         binding.controlsOverlay.visibility = View.VISIBLE
         binding.topControls.visibility = View.VISIBLE
         scheduleControlsHide()
@@ -357,16 +357,11 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun onTapToShowControls() {
         if (isLocked) {
-            binding.unlockContainer.visibility = View.VISIBLE
-            controlsHideHandler.removeCallbacks(controlsHideRunnable)
-            controlsHideHandler.postDelayed({
-                binding.unlockContainer.visibility = View.GONE
-            }, 3000)
-        } else {
-            binding.controlsOverlay.visibility = View.VISIBLE
-            binding.topControls.visibility = View.VISIBLE
-            scheduleControlsHide()
+            return
         }
+        binding.controlsOverlay.visibility = View.VISIBLE
+        binding.topControls.visibility = View.VISIBLE
+        scheduleControlsHide()
     }
 
     private fun initializePlayer() {
